@@ -5,7 +5,7 @@
         </button>
         <div>
             <b id="pageTitle"><?= htmlspecialchars($workspacePageTitle ?? 'Dashboard', ENT_QUOTES, 'UTF-8') ?></b>
-            <div class="hidden text-xs text-slate-500 sm:block">Dr. Yanga Colleges Inc. · Internal scholarship records</div>
+            <div id="workspaceSubtitleText" class="hidden text-xs text-slate-500 sm:block"><?= htmlspecialchars($systemSettings['workspaceSubtitle'] ?? 'Dr. Yanga Colleges Inc. · Internal scholarship records', ENT_QUOTES, 'UTF-8') ?></div>
         </div>
     </div>
     <div class="flex items-center gap-2">

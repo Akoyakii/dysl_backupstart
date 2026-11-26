@@ -227,7 +227,7 @@ function deleteScholarshipType(PDO $db, string $name): void
     }
 }
 
-function validateScholarshipRules(array $names, array $catalog, array $existingHistory = [], string $targetYear = ''): void
+function validateScholarshipRules(array $names, array $catalog, array $existingHistory = [], string $targetYear = '', int $maxResidency = 5): void
 {
     $byName = array_column($catalog, null, 0);
     $external = 0;
@@ -270,8 +270,8 @@ function validateScholarshipRules(array $names, array $catalog, array $existingH
             }
         }
         if ($targetYear !== '') $years[canonicalReportYear($targetYear)] = true;
-        if (count($years) > 5) {
-            throw new InvalidArgumentException("$grant has a maximum residency of five years.");
+        if (count($years) > $maxResidency) {
+            throw new InvalidArgumentException("$grant has a maximum residency of $maxResidency years.");
         }
     }
 }
@@ -341,10 +341,96 @@ function decidePendingScholar(PDO $db, array $request): array
     return ['reference' => $id, 'before' => ['Status' => 'Pending'], 'after' => ['Status' => $status]];
 }
 
-function currentSchoolYear(): string
+function currentSchoolYear(?PDO $db = null): string
 {
+    if ($db) {
+        $settings = readSystemSettings($db);
+        if ($settings['activeSchoolYear'] !== '') {
+            return $settings['activeSchoolYear'];
+        }
+    }
     $year = (int) (new DateTimeImmutable('now', new DateTimeZone('Asia/Manila')))->format('Y');
     return $year . '–' . ($year + 1);
+}
+
+function defaultSystemSettings(): array
+{
+    return [
+        'activeSchoolYear' => '',
+        'activeSemester' => '1st Semester',
+        'pageSize' => '15',
+        'maxResidencyYears' => '5',
+        'inHouseDefaultStatus' => 'Approved',
+        'externalRequiresApproval' => '1',
+        'workspaceSubtitle' => 'Dr. Yanga Colleges Inc. · Internal scholarship records',
+    ];
+}
+
+function readSystemSettings(PDO $db): array
+{
+    $settings = defaultSystemSettings();
+    try {
+        foreach ($db->query('SELECT setting_key, setting_value FROM system_settings') as $row) {
+            if (array_key_exists($row['setting_key'], $settings)) {
+                $settings[$row['setting_key']] = (string) $row['setting_value'];
+            }
+        }
+    } catch (PDOException $error) {
+        if ((int) ($error->errorInfo[1] ?? 0) !== 1146) {
+            throw $error;
+        }
+    }
+    return $settings;
+}
+
+function saveSystemSettings(PDO $db, array $input): array
+{
+    $defaults = defaultSystemSettings();
+    $year = preg_replace('/^(\d{4})\s*[-–—]\s*(\d{4})$/u', '$1–$2', trim((string) ($input['activeSchoolYear'] ?? '')));
+    if ($year !== '' && (!preg_match('/^(\d{4})\x{2013}(\d{4})$/uD', $year, $m) || (int) $m[2] !== (int) $m[1] + 1)) {
+        throw new InvalidArgumentException('Enter an active school year such as 2025-2026, or leave blank for automatic.');
+    }
+    $semester = trim((string) ($input['activeSemester'] ?? $defaults['activeSemester']));
+    $validTerms = array_values(array_unique([...SCHOLAR_SEMESTERS, ...array_column(availableSemesters($db), 'semester')]));
+    if (!in_array($semester, $validTerms, true)) {
+        throw new InvalidArgumentException('Choose a valid active semester.');
+    }
+    $pageSize = (string) ($input['pageSize'] ?? $defaults['pageSize']);
+    if (!in_array($pageSize, ['10', '15', '25', '50'], true)) {
+        throw new InvalidArgumentException('Choose 10, 15, 25, or 50 rows per page.');
+    }
+    $residency = filter_var($input['maxResidencyYears'] ?? $defaults['maxResidencyYears'], FILTER_VALIDATE_INT, [
+        'options' => ['min_range' => 1, 'max_range' => 10],
+    ]);
+    if ($residency === false) {
+        throw new InvalidArgumentException('TES / TDP maximum residency must be between 1 and 10 years.');
+    }
+    $inHouseStatus = (string) ($input['inHouseDefaultStatus'] ?? $defaults['inHouseDefaultStatus']);
+    if (!in_array($inHouseStatus, ['Approved', 'Pending'], true)) {
+        throw new InvalidArgumentException('Choose Approved or Pending for in-house default status.');
+    }
+    $externalApproval = !empty($input['externalRequiresApproval']) && $input['externalRequiresApproval'] !== '0' ? '1' : '0';
+    $subtitle = trim((string) ($input['workspaceSubtitle'] ?? ''));
+    if ($subtitle === '' || strlen($subtitle) > 120 || preg_match('/[\x00-\x1F\x7F]/', $subtitle)) {
+        throw new InvalidArgumentException('Enter a workspace subtitle up to 120 characters.');
+    }
+
+    $values = [
+        'activeSchoolYear' => $year,
+        'activeSemester' => $semester,
+        'pageSize' => $pageSize,
+        'maxResidencyYears' => (string) $residency,
+        'inHouseDefaultStatus' => $inHouseStatus,
+        'externalRequiresApproval' => $externalApproval,
+        'workspaceSubtitle' => $subtitle,
+    ];
+    $before = readSystemSettings($db);
+    $stmt = $db->prepare('INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, UTC_TIMESTAMP())
+        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = UTC_TIMESTAMP()');
+    foreach ($values as $key => $val) {
+        $stmt->execute([$key, $val]);
+    }
+    return ['before' => $before, 'after' => $values];
 }
 
 function editScholarAssignments(PDO $db, array $request): ?array
@@ -385,7 +471,8 @@ function editScholarAssignments(PDO $db, array $request): ?array
     $historyStmt = $db->prepare("SELECT payload FROM records WHERE kind = 'discountHistory' AND BINARY JSON_UNQUOTE(JSON_EXTRACT(payload, '$.id')) = ?");
     $historyStmt->execute([$id]);
     $existingHistory = array_map(static fn($p) => json_decode($p, true, 512, JSON_THROW_ON_ERROR), $historyStmt->fetchAll(PDO::FETCH_COLUMN));
-    validateScholarshipRules($names, $catalog, $existingHistory, $scholar['period'] ?? '');
+    $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
+    validateScholarshipRules($names, $catalog, $existingHistory, $scholar['period'] ?? '', $maxResidency);
 
     $assignmentsChanged = (bool) (array_diff($names, $originalNames) || array_diff($originalNames, $names));
     $identityChanged = $updated['id'] !== $id || $updated['name'] !== $scholar['name'];
@@ -460,7 +547,7 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
     }
     $updated = gmdate('Y-m-d H:i') . ' UTC';
     $scholar['updated'] = $updated;
-    $period = currentSchoolYear();
+    $period = currentSchoolYear($db);
     $scholar['period'] = $period;
     $scholar = validateRecord('scholars', $scholar);
     $names = $scholar['scholarship'];
@@ -470,7 +557,8 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
         !in_array($scholar['status'], ['Approved', 'Pending', 'Not Approved'], true)) {
         throw new InvalidArgumentException('Choose valid, active scholarships and a status.');
     }
-    validateScholarshipRules($names, $catalog, [], $period);
+    $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
+    validateScholarshipRules($names, $catalog, [], $period, $maxResidency);
     $historyEntry = [
         'id' => $scholar['id'], 'name' => $scholar['name'], 'year' => $period,
         'semester' => $scholar['semester'] ?? '1st Semester', 'scholarships' => $names,

@@ -11,7 +11,7 @@ function formatPhilippineTime(value) {
 
 function tablePage(id, rows, filters, render) {
     const pager = document.getElementById(id);
-    const pageSize = 15;
+    const pageSize = Number(window._systemSettings?.pageSize) || 15;
     const key = JSON.stringify(filters);
     const lastPage = Math.max(1, Math.ceil(rows.length / pageSize));
     const page = pager.dataset.filters === key ? Math.min(Number(pager.dataset.page), lastPage) : 1;
@@ -62,6 +62,7 @@ function bindRecordControls() {
             toggleScholarshipDisabled: (_event, button) => toggleScholarshipDisabled(button.dataset.scholarshipName, button.dataset.disabled === "true"),
             deleteScholarship: (_event, button) => deleteScholarship(button.dataset.scholarshipName),
             decideRenewal: (_event, button) => decideRenewal(Number(button.dataset.renewalId), button.dataset.status),
+            resetSystemSettings,
         },
         change: {
             renderAnalytics, renderActivity, renderScholars, renderScholarships, updateSelectedScholarships,
@@ -76,7 +77,7 @@ function bindRecordControls() {
             formatStudentId: (_event, input) => formatStudentId(input),
             renderRenewalSources, renderRenewalQueue,
         },
-        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet, submitNewSemester, submitCarryOverRenewals}
+        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet, submitNewSemester, submitCarryOverRenewals, submitSystemSettings}
     };
     Object.entries(actions).forEach(([type, handlers]) => {
         document.addEventListener(type, event => {
@@ -374,6 +375,7 @@ function closeModal(){
 // Render everything
 function renderAll(){
     syncCustomSemesters();
+    syncSystemSettings();
     renderScholars();
     renderRecent();
     renderScholarships();
@@ -413,6 +415,83 @@ function syncCustomSemesters() {
         const current = targetSem.value;
         targetSem.replaceChildren(...allTerms.map(t => new Option(t, t)));
         if (allTerms.includes(current)) targetSem.value = current;
+    }
+    const settingsSem = document.getElementById("settingsActiveSemester");
+    if (settingsSem) {
+        const current = settingsSem.value;
+        settingsSem.replaceChildren(...allTerms.map(t => new Option(t, t)));
+        if (allTerms.includes(current)) settingsSem.value = current;
+    }
+}
+
+function syncSystemSettings() {
+    const settings = window._systemSettings;
+    if (!settings) return;
+    const subtitle = document.getElementById("workspaceSubtitleText");
+    if (subtitle && settings.workspaceSubtitle) {
+        subtitle.textContent = settings.workspaceSubtitle;
+    }
+    const periodInput = document.querySelector('#scholarForm input[name="period"]');
+    if (periodInput && settings.activeSchoolYear) {
+        periodInput.value = settings.activeSchoolYear;
+    }
+    const form = document.getElementById("systemSettingsForm");
+    if (form) {
+        form.elements.namedItem("activeSchoolYear").value = settings.activeSchoolYear || "";
+        form.elements.namedItem("activeSemester").value = settings.activeSemester || "1st Semester";
+        form.elements.namedItem("pageSize").value = settings.pageSize || "15";
+        form.elements.namedItem("maxResidencyYears").value = settings.maxResidencyYears || "5";
+        form.elements.namedItem("inHouseDefaultStatus").value = settings.inHouseDefaultStatus || "Approved";
+        form.elements.namedItem("workspaceSubtitle").value = settings.workspaceSubtitle || "Dr. Yanga Colleges Inc. · Internal scholarship records";
+        form.elements.namedItem("externalRequiresApproval").checked = settings.externalRequiresApproval !== "0";
+    }
+}
+
+async function submitSystemSettings(event) {
+    event.preventDefault();
+    const form = event.target;
+    const button = form.querySelector('[type="submit"]');
+    if (button.disabled) return;
+    const f = new FormData(form);
+    const settings = {
+        activeSchoolYear: (f.get("activeSchoolYear") || "").trim(),
+        activeSemester: f.get("activeSemester") || "1st Semester",
+        pageSize: f.get("pageSize") || "15",
+        maxResidencyYears: f.get("maxResidencyYears") || "5",
+        inHouseDefaultStatus: f.get("inHouseDefaultStatus") || "Approved",
+        workspaceSubtitle: (f.get("workspaceSubtitle") || "").trim(),
+        externalRequiresApproval: form.elements.namedItem("externalRequiresApproval").checked ? "1" : "0",
+    };
+    button.disabled = true;
+    const label = button.textContent;
+    button.textContent = "Saving…";
+    try {
+        await requestRecords({action: "save-system-settings", settings});
+        showToast("System settings saved.");
+    } catch (error) {
+        showToast(error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = label;
+    }
+}
+
+async function resetSystemSettings() {
+    if (!confirm("Reset all system settings to their default values?")) return;
+    const defaults = {
+        activeSchoolYear: "",
+        activeSemester: "1st Semester",
+        pageSize: "15",
+        maxResidencyYears: "5",
+        inHouseDefaultStatus: "Approved",
+        workspaceSubtitle: "Dr. Yanga Colleges Inc. · Internal scholarship records",
+        externalRequiresApproval: "1",
+    };
+    try {
+        await requestRecords({action: "save-system-settings", settings: defaults});
+        showToast("System settings reset to defaults.");
+    } catch (error) {
+        showToast(error.message);
     }
 }
 

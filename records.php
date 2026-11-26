@@ -83,6 +83,7 @@ try {
         $records['dataEntryLockReason'] = $lock['reason'];
         $records['semesters'] = availableSemesters($db);
         $records['renewals'] = readRenewals($db);
+        $records['systemSettings'] = readSystemSettings($db);
         if ($logRead) writeAccessAuditEvent($db, $account, 'records.viewed');
         respond(200, $records);
     }
@@ -104,8 +105,8 @@ try {
         $request = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
     $action = $request['action'] ?? '';
-    if ($action === 'toggle-data-lock' && !$isAdmin) {
-        respond(403, ['error' => 'Only administrators can lock or unlock staff data entry.']);
+    if (in_array($action, ['toggle-data-lock', 'save-system-settings'], true) && !$isAdmin) {
+        respond(403, ['error' => 'Only administrators can update system settings.']);
     }
     if (!$isAdmin && dataEntryLockStatus($db)['locked']) {
         respond(403, ['error' => 'Staff data entry is currently locked by an administrator.']);
@@ -118,7 +119,7 @@ try {
     } elseif ($action === 'restore' && ($request['version'] ?? null) === 1 && is_array($request['records'] ?? null)) {
         $batch = $request['records'];
         if (!$isAdmin) $batch['activities'] = [];
-    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'carry-over-renewals', 'decide-renewal', 'toggle-data-lock', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
+    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'carry-over-renewals', 'decide-renewal', 'toggle-data-lock', 'save-system-settings', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
         !(in_array($action, ['add-scholarship', 'edit-scholarship'], true) && is_array($request['type'] ?? null))) {
         throw new InvalidArgumentException('Invalid records request.');
     }
@@ -182,6 +183,8 @@ try {
                 'Status' => $lockResult['locked'] ? 'Locked' : 'Unlocked',
                 'Reason' => $lockResult['reason'] ?: 'None',
             ]);
+        } elseif ($action === 'save-system-settings') {
+            writeAuditEvent($db, $account, 'system.settings_updated', saveSystemSettings($db, $request['settings'] ?? []));
         } elseif ($action === 'add-semester') {
             $addedSem = addSemester($db, (string) ($request['schoolYear'] ?? ''), (string) ($request['semester'] ?? ''));
             writeAuditEvent($db, $account, 'system.semester_added', [
@@ -212,6 +215,7 @@ try {
         $records['dataEntryLockReason'] = $lock['reason'];
         $records['semesters'] = availableSemesters($db);
         $records['renewals'] = readRenewals($db);
+        $records['systemSettings'] = readSystemSettings($db);
     } catch (Throwable $error) {
         error_log('ScholarHub saved records but could not refresh the response.');
         respond(503, ['error' => 'Changes were saved. Reload the records to see the updated data.']);

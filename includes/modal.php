@@ -62,7 +62,7 @@
     </label>
 
     <label class="block text-sm font-bold">School year
-        <input name="period" value="<?= currentSchoolYear() ?>" readonly class="mt-2 w-full rounded-xl border bg-slate-100 px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-800">
+        <input name="period" value="<?= htmlspecialchars(currentSchoolYear($db), ENT_QUOTES, 'UTF-8') ?>" readonly class="mt-2 w-full rounded-xl border bg-slate-100 px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-800">
     </label>
     <label class="block text-sm font-bold">Semester *
         <select name="semester" required class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-900">

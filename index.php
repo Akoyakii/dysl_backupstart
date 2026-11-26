@@ -19,6 +19,7 @@ if (!$account) {
 }
 try {
     $catalog = scholarshipCatalog();
+    $systemSettings = readSystemSettings($db);
 } catch (Throwable $error) {
     stopRequest(503, 'The scholarship catalog could not be loaded. Verify that includes/catalog.json is present and valid.');
 }

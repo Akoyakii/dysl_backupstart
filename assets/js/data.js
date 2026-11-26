@@ -60,6 +60,9 @@ function requestRecords(request, preview) {
             window._semesters = records.semesters;
         }
         renewals = Array.isArray(records.renewals) ? records.renewals : [];
+        if (records.systemSettings && typeof records.systemSettings === "object") {
+            window._systemSettings = records.systemSettings;
+        }
         const status = document.getElementById("recordsStatus");
         try {
             renderAll();

@@ -16,6 +16,48 @@ $backupList = array_slice($backupList, 0, 15);
 <section id="settings" class="view">
     <h1 class="mb-6 text-balance text-3xl font-black">Settings &amp; Administration</h1>
     <div class="mb-6 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        <h2 class="text-lg font-bold">System settings</h2>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Configure active academic period, pagination, scholarship rules, and workspace defaults.</p>
+        <form id="systemSettingsForm" data-submit="submitSystemSettings" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <label class="text-sm font-semibold">Active school year
+                <input name="activeSchoolYear" pattern="(\d{4}[-–]\d{4})?" placeholder="Auto (e.g. 2025-2026)" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal tabular-nums dark:border-slate-700 dark:bg-slate-800">
+            </label>
+            <label class="text-sm font-semibold">Active semester
+                <select id="settingsActiveSemester" name="activeSemester" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800">
+                    <?php foreach (SCHOLAR_SEMESTERS as $semester): ?><option><?= $semester ?></option><?php endforeach; ?>
+                </select>
+            </label>
+            <label class="text-sm font-semibold">Rows per page
+                <select name="pageSize" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal tabular-nums dark:border-slate-700 dark:bg-slate-800">
+                    <option value="10">10 rows</option>
+                    <option value="15" selected>15 rows (default)</option>
+                    <option value="25">25 rows</option>
+                    <option value="50">50 rows</option>
+                </select>
+            </label>
+            <label class="text-sm font-semibold">TES / TDP max residency (years)
+                <input name="maxResidencyYears" type="number" min="1" max="10" value="5" required class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal tabular-nums dark:border-slate-700 dark:bg-slate-800">
+            </label>
+            <label class="text-sm font-semibold">Default in-house status
+                <select name="inHouseDefaultStatus" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800">
+                    <option value="Approved">Approved</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </label>
+            <label class="text-sm font-semibold">Workspace subtitle
+                <input name="workspaceSubtitle" required maxlength="120" value="Dr. Yanga Colleges Inc. · Internal scholarship records" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800">
+            </label>
+            <label class="flex items-center gap-2 text-sm font-semibold sm:col-span-2 lg:col-span-3">
+                <input name="externalRequiresApproval" type="checkbox" checked class="accent-dyci-blue">
+                <span>Require approval (default to Pending) for external grants (TES / TDP)</span>
+            </label>
+            <div class="flex flex-wrap gap-3 sm:col-span-2 lg:col-span-3">
+                <button type="submit" class="rounded-xl bg-dyci-blue px-4 py-2.5 text-sm font-bold text-white hover:bg-dyci-blueDark disabled:opacity-60">Save system settings</button>
+                <button type="button" data-click="resetSystemSettings" class="rounded-xl border px-4 py-2.5 text-sm font-bold hover:border-dyci-blue dark:border-slate-700">Reset to defaults</button>
+            </div>
+        </form>
+    </div>
+    <div class="mb-6 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <h2 class="text-lg font-bold">Staff data entry lock</h2>
         <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Lock staff data entry during reporting periods or at the end of a semester so staff cannot add or edit records. Administrators retain full access.</p>
         <div class="mt-4 flex flex-wrap items-center gap-4">

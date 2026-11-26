@@ -258,7 +258,9 @@ function updateSelectedScholarships(){
         const byName = new Map((window.scholarshipCatalog || []).map(item => [item[0], item]));
         const hasExternal = selected.some(name => byName.get(name)?.[1] === "External and Government Grants");
         const statusSelect = form.elements.namedItem("status");
-        if (statusSelect) statusSelect.value = hasExternal ? "Pending" : "Approved";
+        const extRequiresApproval = window._systemSettings?.externalRequiresApproval !== "0";
+        const inHouseDefault = window._systemSettings?.inHouseDefaultStatus || "Approved";
+        if (statusSelect) statusSelect.value = hasExternal && extRequiresApproval ? "Pending" : inHouseDefault;
     }
 }
 

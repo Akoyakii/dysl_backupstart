@@ -109,3 +109,9 @@ CREATE TABLE IF NOT EXISTS scholarship_assignments (
     UNIQUE KEY assignment_unique (student_id, scholarship, school_year, semester),
     KEY renewal_queue_idx (status, school_year, semester)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS system_settings (
+    setting_key VARCHAR(64) NOT NULL PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL,
+    updated_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

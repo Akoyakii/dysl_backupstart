@@ -1,0 +1,288 @@
+let scholarshipBarChart = null, scholarshipLineChart = null;
+let dashboardStatusChart = null, dashboardUsageChart = null;
+
+function renderDashboardMetrics() {
+    const statuses = ["Approved", "Pending", "Not Approved"];
+    const counts = new Map(statuses.map(status => [status, 0]));
+    for (const {status} of scholars) {
+        if (counts.has(status)) counts.set(status, counts.get(status) + 1);
+    }
+    const [approved, pending, rejected] = counts.values();
+    const decided = approved + rejected;
+    const usage = scholarshipUsageEntries(discountHistory, "").slice(0, 5);
+    document.getElementById("dashboardApprovalRate").textContent = decided ? `${Math.round(approved / decided * 100)}%` : "\u2014";
+    document.getElementById("dashboardApprovalSummary").textContent = decided
+        ? `${approved} approved out of ${decided} completed decisions` : "No completed decisions";
+    document.getElementById("dashboardPendingCount").textContent = pending;
+    document.getElementById("dashboardStatusSummary").textContent = approved + pending + rejected
+        ? `${approved} approved, ${pending} pending, ${rejected} not approved` : "No scholar decisions to show.";
+    const chartAvailable = typeof Chart !== "undefined";
+    document.getElementById("dashboardUsageSummary").textContent = usage.length
+        ? (chartAvailable ? "Top five programs by recorded scholarship assignments." : usage.map(([name, count]) => `${name} (${count})`).join(", "))
+        : "No scholarship assignments to show.";
+    if (!document.getElementById("dashboard").classList.contains("active")) return;
+
+    dashboardStatusChart?.destroy();
+    dashboardUsageChart?.destroy();
+    dashboardStatusChart = dashboardUsageChart = null;
+    const statusPlot = document.getElementById("dashboardStatusPlot");
+    const usagePlot = document.getElementById("dashboardUsagePlot");
+    statusPlot.hidden = !chartAvailable || !(approved + pending + rejected);
+    usagePlot.hidden = !chartAvailable || !usage.length;
+    const dark = document.documentElement.classList.contains("dark");
+    const ticks = dark ? "#e7e7ea" : "#475569";
+    const options = {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}};
+    if (!statusPlot.hidden) {
+        dashboardStatusChart = new Chart(document.getElementById("dashboardStatusChart"), {
+            type: "doughnut",
+            data: {
+                labels: statuses,
+                datasets: [{data: [approved, pending, rejected], backgroundColor: ["#15976f", "#d9a11b", "#d95370"], borderWidth: 0}]
+            },
+            options: {...options, cutout: "65%"}
+        });
+    }
+    if (!usagePlot.hidden) {
+        dashboardUsageChart = new Chart(document.getElementById("dashboardUsageChart"), {
+            type: "bar",
+            data: {
+                labels: usage.map(([name]) => name),
+                datasets: [{label: "Assignments", data: usage.map(([, count]) => count), backgroundColor: dark ? "#fff" : "#1a3b9c", borderRadius: 4}]
+            },
+            options: {...options, indexAxis: "y", scales: {
+                x: {beginAtZero: true, grid: {color: dark ? "#39393f" : "#e2e8f0"}, ticks: {color: ticks, precision: 0}},
+                y: {grid: {display: false}, ticks: {color: ticks, callback(value) {
+                    const name = this.getLabelForValue(value);
+                    return name.length > 20 ? name.slice(0, 19) + "\u2026" : name;
+                }}}
+            }}
+        });
+    }
+}
+
+function populateAnalyticsFilters(){
+    const years = [...new Set(discountHistory.map(x => x.year))].sort();
+    const year = document.getElementById("analyticsYear");
+    
+    if (year) updateSelectOptions("analyticsYear", "All School Years", years);
+    const catalog = window.scholarshipCatalog || [];
+    updateSelectOptions("analyticsScholarship", "All Scholarships", catalog.map(item => item[0]));
+}
+
+function getFilteredHistory(){
+    const y = document.getElementById("analyticsYear")?.value || "All";
+    const sem = document.getElementById("analyticsSemester")?.value || "All";
+    const sch = document.getElementById("analyticsScholarship")?.value || "";
+    
+    return discountHistory.filter(r => 
+        (y === "All" || r.year === y) && 
+        (sem === "All" || r.semester === sem) && 
+        (!sch || r.scholarships.includes(sch))
+    );
+}
+
+function scholarshipUsageEntries(rows, selectedScholarship) {
+    const usage = Object.create(null);
+    rows.forEach(row => row.scholarships.forEach(name => {
+        if (!selectedScholarship || name === selectedScholarship) usage[name] = (usage[name] || 0) + 1;
+    }));
+    return Object.entries(usage).sort((a, b) => b[1] - a[1]);
+}
+
+function exportScholarshipUsage() {
+    const name = document.getElementById("scholarshipUsageHeading").textContent;
+    const students = scholarshipUsageRoster(name);
+    if (!students.length) return;
+    const fields = ["Scholarship", "Student ID", "Student name", "Course / year", "School year", "Semester", "Current status"];
+    openExportDialog({
+        title: name + " student roster",
+        summary: `${students.length} matching rows across all pages. Your report filters and roster search are included.`,
+        fields,
+        formats: [["xlsx", "Excel (.xlsx)"], ["csv", "CSV (.csv)"]],
+        download(columns, format) {
+            const rows = [fields, ...students.map(row => [name, row.id, row.name, row.course, row.year, row.semester, row.status])];
+            downloadScholarshipRoster(rows.map(row => columns.map(index => row[index])), format);
+        }
+    });
+}
+
+function downloadScholarshipRoster(rows, format) {
+    const csv = () => rows.map(row => row.map(value => {
+        let cell = String(value);
+        if (typeof value === "string" && /^(?:\s*[=+@-]|[\t\r\n])/.test(cell)) cell = "'" + cell;
+        return '"' + cell.replaceAll('"', '""') + '"';
+    }).join(",")).join("\r\n");
+    const file = format === "xlsx" ? buildRosterWorkbook(rows)
+        : new Blob(["\uFEFF", csv()], {type: "text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = format === "xlsx" ? "scholarship-students.xlsx" : "scholarship-students.csv";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function renderScholarshipUsageDetails(usageEntries = scholarshipUsageEntries(getFilteredHistory(),
+    document.getElementById("analyticsScholarship")?.value || "")) {
+    const availments = usageEntries.reduce((sum, [, count]) => sum + count, 0);
+    const filters = ["analyticsYear", "analyticsSemester", "analyticsScholarship"]
+        .map(id => document.getElementById(id)?.value || "");
+    const query = document.getElementById("scholarshipUsageDetailsSearch").value.trim().toLowerCase();
+    const catalog = new Map((window.scholarshipCatalog || []).map(([name, category]) => [name, category]));
+    const categoryOf = name => catalog.get(name) || "Uncategorized";
+    const categories = [...new Set(usageEntries.map(([name]) => categoryOf(name)))].sort((a, b) => a.localeCompare(b));
+    const category = updateSelectOptions("scholarshipUsageCategory", "All categories", categories);
+    const matches = usageEntries.filter(([name]) => (!category || categoryOf(name) === category) && name.toLowerCase().includes(query));
+    const usagePage = tablePage("scholarshipUsagePagination", matches, [...filters, query, category], renderScholarshipUsageDetails);
+    document.getElementById("scholarshipAnalytics").innerHTML = usagePage.length ? usagePage.map(([name, count]) => `
+        <button type="button" data-click="openScholarshipUsage" data-scholarship-name="${escapeHtml(name)}" aria-haspopup="dialog"
+            class="group flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 text-left hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700">
+            <span class="min-w-0"><span class="block break-words font-semibold">${escapeHtml(name)}</span><span class="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">${Math.round(count/Math.max(1,availments)*100)}% of filtered availments</span></span>
+            <span class="flex shrink-0 items-center gap-3 font-bold tabular-nums text-dyci-blue dark:text-blue-300">${count} availment${count === 1 ? "" : "s"}
+                <span aria-hidden="true" class="text-xl leading-none transition-transform group-hover:translate-x-1 group-focus-visible:translate-x-1">&rsaquo;</span>
+            </span>
+        </button>`).join("") : `<p class="text-sm text-slate-600 dark:text-slate-300">${query || category ? "No scholarships match your search and category." : "No scholarship records match the selected filters."}</p>`;
+}
+
+function renderAnalytics(){
+    const rows = getFilteredHistory(), selectedScholarship = document.getElementById("analyticsScholarship")?.value || "";
+    const dark = document.documentElement.classList.contains("dark");
+    const tickColor = dark ? "#c5c5cc" : "#475569";
+    const gridColor = dark ? "#39393f" : "#e2e8f0";
+    
+    const usageEntries = scholarshipUsageEntries(rows, selectedScholarship);
+    const uniqueStudents = new Set(rows.map(r => r.id));
+    const years = [...new Set(rows.map(r => r.year))].sort();
+    const availments = usageEntries.reduce((sum, [, count]) => sum + count, 0);
+    
+    // Update Stat Cards
+    document.getElementById("reportTotalScholars").textContent = availments;
+    document.getElementById("reportApprovalRate").textContent = uniqueStudents.size;
+    document.getElementById("reportProgramCount").textContent = (window.scholarshipCatalog || []).length;
+    document.getElementById("reportActivityCount").textContent = years.length;
+    
+    renderScholarshipUsageDetails(usageEntries);
+
+    const topUsage = usageEntries.slice(0, 8);
+    const usageSummary = document.getElementById("scholarshipUsageSummary");
+    const usagePlot = document.getElementById("scholarshipUsagePlot");
+    if(scholarshipBarChart) scholarshipBarChart.destroy();
+    scholarshipBarChart = null;
+    usagePlot.hidden = !topUsage.length || typeof Chart === "undefined";
+    usageSummary.textContent = !topUsage.length ? "No scholarship records match the selected filters."
+        : usagePlot.hidden ? "See Scholarship Usage Details for the filtered counts."
+        : usageEntries.length > topUsage.length
+            ? `Showing the top ${topUsage.length} of ${usageEntries.length} scholarships by availments. See details for all programs.`
+            : "Availments per scholarship for the selected filters.";
+    if (!usagePlot.hidden) {
+        scholarshipBarChart = new Chart(document.getElementById("scholarshipPieChart"), {
+            type: "bar", 
+            data: {
+                labels: topUsage.map(([name]) => name),
+                datasets: [{
+                    label: 'Availments',
+                    data: topUsage.map(([, count]) => count),
+                    backgroundColor: dark ? "#fff" : "#1A3B9C",
+                    borderRadius: 6
+                }]
+            }, 
+            options: {
+                indexAxis: "y",
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, precision: 0, maxTicksLimit: 6 } },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            color: tickColor,
+                            autoSkip: false,
+                            callback(value) {
+                                const name = this.getLabelForValue(value);
+                                return name.length > 20 ? name.slice(0, 19) + "\u2026" : name;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Line Chart
+    const lineCtx = document.getElementById("scholarshipLineChart")?.getContext("2d");
+    if(scholarshipLineChart) scholarshipLineChart.destroy();
+    scholarshipLineChart = null;
+    if(lineCtx && years.length && typeof Chart !== "undefined") scholarshipLineChart = new Chart(lineCtx, {
+        type:"line", 
+        data:{
+            labels:years, 
+            datasets:[{
+                label:"Availments", 
+                data:years.map(y => rows.filter(r => r.year === y).reduce((n,r) => n + r.scholarships.filter(s => !selectedScholarship || s === selectedScholarship).length, 0)), 
+                tension:.3, fill:false, borderWidth:3, pointRadius:4, borderColor:'#F4B925', backgroundColor:'#F4B925'
+            }]
+        }, 
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {legend: {display: false}},
+            scales: {
+                x: {grid: {display: false}, ticks: {color: tickColor}},
+                y: {beginAtZero: true, grid: {color: gridColor}, ticks: {color: tickColor, precision: 0}}
+            }
+        }
+    });
+}
+
+function openScholarshipUsage(name) {
+    const dialog = document.getElementById("scholarshipUsageDialog");
+    if (dialog.open) return;
+    document.getElementById("scholarshipUsageRosterPages").dataset.page = "1";
+    document.getElementById("scholarshipUsageSearch").value = "";
+    document.getElementById("scholarshipUsageHeading").textContent = name;
+    renderScholarshipUsageRoster();
+    dialog.showModal();
+}
+
+function scholarshipUsageRoster(name) {
+    const students = new Map(scholars.map(student => [student.id, student]));
+    const query = document.getElementById("scholarshipUsageSearch").value.trim().toLowerCase();
+    return getFilteredHistory().filter(row => row.scholarships.includes(name)).map(row => {
+        const student = students.get(row.id);
+        return {...row, name: student?.name || row.name || row.id, course: student?.course || "", status: student?.status || ""};
+    }).filter(row => [row.name, row.id, row.course, row.year, row.semester, row.status].join(" ").toLowerCase().includes(query));
+}
+
+function renderScholarshipUsageRoster() {
+    const name = document.getElementById("scholarshipUsageHeading").textContent;
+    const search = document.getElementById("scholarshipUsageSearch").value.trim().toLowerCase();
+    const rows = scholarshipUsageRoster(name);
+    const count = new Set(rows.map(row => row.id)).size;
+    document.getElementById("exportScholarshipUsage").disabled = !rows.length;
+    document.getElementById("scholarshipUsageRosterCount").textContent =
+        `${count} student${count === 1 ? "" : "s"} across ${rows.length} matching availment${rows.length === 1 ? "" : "s"}`;
+    const page = tablePage("scholarshipUsageRosterPages", rows, [name, search], renderScholarshipUsageRoster);
+    document.getElementById("scholarshipUsageRoster").innerHTML = page.map(row =>
+        `<tr class="border-t dark:border-slate-700">
+            <td class="px-4 py-3"><span class="block font-semibold">${escapeHtml(row.name)}</span>
+                <span class="tabular-nums text-xs text-slate-600 dark:text-slate-300">${escapeHtml(row.id)}</span></td>
+            <td class="px-4 py-3">${escapeHtml(row.course || "\u2014")}</td>
+            <td class="whitespace-nowrap px-4 py-3 tabular-nums">${escapeHtml(row.year)}</td>
+            <td class="whitespace-nowrap px-4 py-3">${escapeHtml(row.semester)}</td>
+            <td class="px-4 py-3">${row.status ? scholarStatus(row.status) : "\u2014"}</td>
+        </tr>`).join("") || '<tr><td colspan="5" class="px-4 py-6 text-slate-600 dark:text-slate-300">No students match your search and filters.</td></tr>';
+    document.getElementById("scholarshipUsageRosterScroll").scrollTop = 0;
+}
+
+function resetAnalyticsFilters(){
+    document.getElementById("analyticsYear").value = "All";
+    document.getElementById("analyticsSemester").value = "All";
+    document.getElementById("analyticsScholarship").value = "";
+    renderAnalytics();
+}
+
+function renderReports(){
+    populateAnalyticsFilters();
+    renderAnalytics();
+}

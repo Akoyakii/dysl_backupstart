@@ -1,0 +1,29 @@
+<FilesMatch "(?i)\.(sql|json|md|bak|zip|env)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{HTTP_HOST} ^dysl\.byethost7\.com(?::80)?$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{REQUEST_METHOD} !^(GET|HEAD)$
+    RewriteRule ^ - [F,L]
+
+    RewriteCond %{HTTP_HOST} ^dysl\.byethost7\.com(?::80)?$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://dysl.byethost7.com%{REQUEST_URI} [R=308,L,NE]
+
+    # Recover public links produced by the previous relative redirects on ByetHost.
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{HTTP_HOST} ^dysl\.byethost7\.com(?::443)?$ [NC]
+    RewriteRule ^home/[^/]+/byethost7\.com/[^/]+/htdocs/(index|login|report-archive|signup-requests|user-management|database-backup|records)(\.php)?$ /$1 [R=302,L]
+
+    # Redirect old page URLs to root-relative public paths.
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} "[[:space:]]/+[^?[:space:]]*\.php(?:\?|[[:space:]])"
+    RewriteRule ^(index|login|report-archive|signup-requests|user-management|database-backup|records)\.php$ /$1 [R=302,L]
+
+    RewriteRule ^waiting-for-approval$ login.php?waiting=1 [L]
+    RewriteRule ^(index|login|logout|report-archive|signup-requests|user-management|database-backup|records)$ $1.php [L]
+</IfModule>

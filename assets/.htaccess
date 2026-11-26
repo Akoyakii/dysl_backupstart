@@ -1,0 +1,5 @@
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|png|svg)$">
+        Header set Cache-Control "public, max-age=3600"
+    </FilesMatch>
+</IfModule>

@@ -32,8 +32,10 @@ try {
         if (!$isAdmin && $type === 'activity-history') {
             stopRequest(403, 'Audit logs require administrator access.');
         }
+        $customTerms = array_column(availableSemesters($db), 'semester');
+        $allTerms = array_values(array_unique([...SCHOLAR_SEMESTERS, ...$customTerms]));
         if (!is_string($type) || !isset(REPORT_TITLES[$type]) || !is_string($year) || strlen($year) > 64 ||
-            !is_string($semester) || ($semester !== '' && !in_array($semester, SCHOLAR_SEMESTERS, true))) {
+            !is_string($semester) || ($semester !== '' && !in_array($semester, $allTerms, true))) {
             stopRequest(400, 'Choose valid report filters.');
         }
         session_write_close();
@@ -152,6 +154,7 @@ try {
         }
     }
     krsort($years, SORT_NATURAL);
+    $allSemesters = array_values(array_unique([...SCHOLAR_SEMESTERS, ...array_column(availableSemesters($db), 'semester')]));
 } catch (Throwable $error) {
     if (isset($db) && $db->inTransaction()) $db->rollBack();
     stopRequest(503, databaseSetupMessage($error) ?? 'The report archive is temporarily unavailable.');
@@ -207,7 +210,7 @@ require __DIR__ . '/config.php';
             <label class="text-sm font-semibold">Semester
                 <select name="semester" class="mt-1 block w-full rounded-xl border px-3 py-2">
                     <option value="">All semesters</option>
-                    <?php foreach (SCHOLAR_SEMESTERS as $term): ?><option><?= reportText($term) ?></option><?php endforeach; ?>
+                    <?php foreach ($allSemesters as $term): ?><option><?= reportText($term) ?></option><?php endforeach; ?>
                 </select>
             </label>
             <button type="submit" class="rounded-xl bg-dyci-blue px-4 py-2.5 text-sm font-bold text-white hover:bg-dyci-blueDark">Generate report</button>

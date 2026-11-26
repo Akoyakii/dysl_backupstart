@@ -103,11 +103,24 @@ function validateRecord(string $kind, array $record): array
     if ($kind === 'scholars') {
         $fields[$kind][] = 'period';
         if (array_key_exists('semester', $record)) {
-            if (!in_array($record['semester'], SCHOLAR_SEMESTERS, true)) {
+            if (!is_string($record['semester']) || trim($record['semester']) === '' || strlen($record['semester']) > 64) {
                 throw new InvalidArgumentException('Choose a valid semester.');
             }
             $fields[$kind][] = 'semester';
         }
+        if (array_key_exists('program', $record) && $record['program'] !== '') {
+            if (!is_string($record['program']) || strlen($record['program']) > 64 || preg_match('/[\x00-\x1F\x7F]/', $record['program'])) {
+                throw new InvalidArgumentException('The program is invalid.');
+            }
+            $fields[$kind][] = 'program';
+        }
+    }
+    if ($kind !== 'activities' && array_key_exists('waivedAmount', $record) && $record['waivedAmount'] !== null && $record['waivedAmount'] !== '') {
+        if (!is_numeric($record['waivedAmount']) || (float) $record['waivedAmount'] < 0 || (float) $record['waivedAmount'] > 10000000) {
+            throw new InvalidArgumentException('Enter a valid waived amount.');
+        }
+        $record['waivedAmount'] = round((float) $record['waivedAmount'], 2);
+        $fields[$kind][] = 'waivedAmount';
     }
     return array_intersect_key($record, array_flip($fields[$kind]));
 }
@@ -116,16 +129,151 @@ function scholarshipCatalog(?PDO $db = null): array
 {
     $catalog = json_decode(file_get_contents(__DIR__ . '/catalog.json'), true, 512, JSON_THROW_ON_ERROR);
     $byName = array_column($catalog, null, 0);
+    foreach ($byName as &$entry) {
+        if (!isset($entry[5])) $entry[5] = '';
+        $entry[6] = false;
+    }
+    unset($entry);
     if ($db) {
-        foreach ($db->query('SELECT name, category, coverage, benefit FROM scholarship_types ORDER BY name') as $row) {
+        foreach ($db->query('SELECT name, category, coverage, benefit, disabled FROM scholarship_types ORDER BY name') as $row) {
             $original = $byName[$row['name']] ?? null;
             $description = $original && $original[3] === $row['coverage'] && $original[4] === $row['benefit']
                 ? $original[2] : $row['coverage'];
-            $byName[$row['name']] = [$row['name'], $row['category'], $description, $row['coverage'], $row['benefit']];
-            if (isset($original[5])) $byName[$row['name']][5] = $original[5];
+            $byName[$row['name']] = [
+                $row['name'],
+                $row['category'],
+                $description,
+                $row['coverage'],
+                $row['benefit'],
+                $original[5] ?? '',
+                (bool) $row['disabled'],
+            ];
         }
     }
     return array_values($byName);
+}
+
+function dataEntryLockStatus(PDO $db): array
+{
+    $row = $db->query('SELECT data_entry_locked, lock_reason FROM record_write_lock WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+    return [
+        'locked' => (bool) ($row['data_entry_locked'] ?? false),
+        'reason' => (string) ($row['lock_reason'] ?? ''),
+    ];
+}
+
+function setDataEntryLock(PDO $db, bool $locked, string $reason): array
+{
+    $cleanReason = trim($reason);
+    if (strlen($cleanReason) > 255 || preg_match('/[\x00-\x1F\x7F]/', $cleanReason)) {
+        throw new InvalidArgumentException('Enter a lock reason up to 255 characters.');
+    }
+    $stmt = $db->prepare('UPDATE record_write_lock SET data_entry_locked = ?, lock_reason = ? WHERE id = 1');
+    $stmt->execute([$locked ? 1 : 0, $locked ? $cleanReason : '']);
+    return ['locked' => $locked, 'reason' => $locked ? $cleanReason : ''];
+}
+
+function availableSemesters(PDO $db): array
+{
+    $rows = $db->query('SELECT school_year, semester FROM semesters ORDER BY school_year DESC, id ASC')->fetchAll(PDO::FETCH_ASSOC);
+    return $rows;
+}
+
+function addSemester(PDO $db, string $schoolYear, string $semester): array
+{
+    $year = canonicalReportYear($schoolYear);
+    if (!preg_match('/^\d{4}\x{2013}\d{4}$/uD', $year)) {
+        throw new InvalidArgumentException('Enter a school year such as 2025-2026.');
+    }
+    $term = trim($semester);
+    if (!preg_match('/\A[^\x00-\x1F\x7F]{1,20}\z/u', $term)) {
+        throw new InvalidArgumentException('Enter a valid semester name (up to 20 characters).');
+    }
+    $stmt = $db->prepare('INSERT INTO semesters (school_year, semester, created_at) VALUES (?, ?, UTC_TIMESTAMP())');
+    $stmt->execute([$year, $term]);
+    return ['school_year' => $year, 'semester' => $term];
+}
+
+function toggleScholarshipTypeDisabled(PDO $db, string $name, bool $disabled): array
+{
+    $catalog = array_column(scholarshipCatalog($db), null, 0);
+    $item = $catalog[$name] ?? null;
+    if (!$item) {
+        throw new DomainException('The scholarship type could not be found.');
+    }
+    $stmt = $db->prepare('INSERT INTO scholarship_types (name, category, coverage, benefit, disabled) VALUES (?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE disabled = ?');
+    $flag = $disabled ? 1 : 0;
+    $stmt->execute([$item[0], $item[1], $item[3], $item[4], $flag, $flag]);
+    return ['Scholarship' => $item[0], 'Status' => $disabled ? 'Disabled' : 'Enabled'];
+}
+
+function deleteScholarshipType(PDO $db, string $name): void
+{
+    $catalog = array_column(scholarshipCatalog($db), null, 0);
+    if (!isset($catalog[$name])) {
+        throw new DomainException('The scholarship type could not be found.');
+    }
+    $check = $db->prepare("SELECT 1 FROM records WHERE kind IN ('scholars', 'discountHistory')
+        AND (JSON_CONTAINS(payload, JSON_QUOTE(?), '$.scholarship') OR JSON_CONTAINS(payload, JSON_QUOTE(?), '$.scholarships')) LIMIT 1");
+    $check->execute([$name, $name]);
+    if ($check->fetchColumn()) {
+        throw new DomainException('This scholarship type is linked to existing student or discount records. Disable it instead of deleting.');
+    }
+    $del = $db->prepare('DELETE FROM scholarship_types WHERE name = ?');
+    $del->execute([$name]);
+    if ($del->rowCount() === 0) {
+        throw new DomainException('Built-in scholarship types cannot be deleted. Disable it instead.');
+    }
+}
+
+function validateScholarshipRules(array $names, array $catalog, array $existingHistory = [], string $targetYear = ''): void
+{
+    $byName = array_column($catalog, null, 0);
+    $external = 0;
+    $inHouse = 0;
+    $athletic = 0;
+    $hasFull = false;
+    foreach ($names as $name) {
+        $item = $byName[$name] ?? null;
+        if (!$item) continue;
+        $cat = $item[1];
+        $benefit = $item[4];
+        if ($benefit === '100%') $hasFull = true;
+        if ($cat === 'External and Government Grants') {
+            $external++;
+        } elseif (in_array($cat, ['DISTRICT', 'PROVINCIAL', 'INTERNATIONAL'], true)) {
+            $athletic++;
+        } else {
+            $inHouse++;
+        }
+    }
+    if ($hasFull && count($names) > 1) {
+        throw new InvalidArgumentException('A student with a 100% full scholarship cannot receive an additional scholarship.');
+    }
+    if ($athletic > 0) {
+        if (count($names) > 2) {
+            throw new InvalidArgumentException('Athletes may apply for up to two scholarships.');
+        }
+    } else {
+        if ($external > 1 || $inHouse > 1) {
+            throw new InvalidArgumentException('A student may receive at most one external scholarship and one in-house scholarship.');
+        }
+    }
+    foreach (['TES', 'TDP'] as $grant) {
+        if (!in_array($grant, $names, true)) continue;
+        $years = [];
+        foreach ($existingHistory as $row) {
+            if (in_array($grant, $row['scholarships'] ?? [], true)) {
+                $y = canonicalReportYear($row['year'] ?? '');
+                if ($y !== '') $years[$y] = true;
+            }
+        }
+        if ($targetYear !== '') $years[canonicalReportYear($targetYear)] = true;
+        if (count($years) > 5) {
+            throw new InvalidArgumentException("$grant has a maximum residency of five years.");
+        }
+    }
 }
 
 function saveScholarshipType(PDO $db, array $type, bool $editing = false): ?array
@@ -219,17 +367,25 @@ function editScholarAssignments(PDO $db, array $request): ?array
         'status' => $request['status'] ?? null,
         'updated' => gmdate('Y-m-d H:i') . ' UTC',
     ]);
+    if (array_key_exists('waivedAmount', $request)) {
+        $updated['waivedAmount'] = $request['waivedAmount'];
+    }
     if ($updated['id'] !== $id &&
         (!is_string($updated['id']) || !preg_match('/\A[0-9]{4}-[0-9]{5}\z/', $updated['id']))) {
         throw new InvalidArgumentException('Enter a student ID in the format 2026-00125.');
     }
     $validated = validateRecord('scholars', $updated);
     $names = $validated['scholarship'];
-    $allowed = array_merge($originalNames, array_column(scholarshipCatalog($db), 0));
+    $catalog = scholarshipCatalog($db);
+    $allowed = array_merge($originalNames, array_column($catalog, 0));
     if (!$names || array_diff($names, $allowed) || count(array_unique($names)) !== count($names) ||
         !in_array($validated['status'], ['Approved', 'Pending', 'Not Approved'], true)) {
         throw new InvalidArgumentException('Choose valid scholarships and a status.');
     }
+    $historyStmt = $db->prepare("SELECT payload FROM records WHERE kind = 'discountHistory' AND BINARY JSON_UNQUOTE(JSON_EXTRACT(payload, '$.id')) = ?");
+    $historyStmt->execute([$id]);
+    $existingHistory = array_map(static fn($p) => json_decode($p, true, 512, JSON_THROW_ON_ERROR), $historyStmt->fetchAll(PDO::FETCH_COLUMN));
+    validateScholarshipRules($names, $catalog, $existingHistory, $scholar['period'] ?? '');
 
     $assignmentsChanged = (bool) (array_diff($names, $originalNames) || array_diff($originalNames, $names));
     $identityChanged = $updated['id'] !== $id || $updated['name'] !== $scholar['name'];
@@ -308,17 +464,23 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
     $scholar['period'] = $period;
     $scholar = validateRecord('scholars', $scholar);
     $names = $scholar['scholarship'];
-    $knownNames = array_column(scholarshipCatalog($db), 0);
+    $catalog = scholarshipCatalog($db);
+    $knownNames = array_column(array_filter($catalog, static fn($item) => empty($item[6])), 0);
     if (!$names || array_diff($names, $knownNames) || count(array_unique($names)) !== count($names) ||
         !in_array($scholar['status'], ['Approved', 'Pending', 'Not Approved'], true)) {
-        throw new InvalidArgumentException('Choose valid scholarships and a status.');
+        throw new InvalidArgumentException('Choose valid, active scholarships and a status.');
+    }
+    validateScholarshipRules($names, $catalog, [], $period);
+    $historyEntry = [
+        'id' => $scholar['id'], 'name' => $scholar['name'], 'year' => $period,
+        'semester' => $scholar['semester'] ?? '1st Semester', 'scholarships' => $names,
+    ];
+    if (isset($scholar['waivedAmount'])) {
+        $historyEntry['waivedAmount'] = $scholar['waivedAmount'];
     }
     return [
         'scholars' => [$scholar],
-        'discountHistory' => [[
-            'id' => $scholar['id'], 'name' => $scholar['name'], 'year' => $period,
-            'semester' => $scholar['semester'] ?? '1st Semester', 'scholarships' => $names,
-        ]],
+        'discountHistory' => [$historyEntry],
         'activities' => [],
     ];
 }

@@ -31,7 +31,27 @@
             <option value="School of Psychology">School of Psychology</option>
         </select>
     </label>
-    <label class="block text-sm font-bold md:col-span-2">Year Level *
+    <label class="block text-sm font-bold">Program / Course
+        <select name="program" class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-900">
+            <option value="">Select Program (Optional)</option>
+            <option value="BSIT">BSIT — BS Information Technology</option>
+            <option value="BSCS">BSCS — BS Computer Science</option>
+            <option value="BSA">BSA — BS Accountancy</option>
+            <option value="BSBA">BSBA — BS Business Administration</option>
+            <option value="BSED">BSED — Bachelor of Secondary Education</option>
+            <option value="BEED">BEED — Bachelor of Elementary Education</option>
+            <option value="BSN">BSN — BS Nursing</option>
+            <option value="BSHM">BSHM — BS Hospitality Management</option>
+            <option value="BSTM">BSTM — BS Tourism Management</option>
+            <option value="BSMT">BSMT — BS Marine Transportation</option>
+            <option value="BSMarE">BSMarE — BS Marine Engineering</option>
+            <option value="BSME">BSME — BS Mechanical Engineering</option>
+            <option value="BS Psych">BS Psych — BS Psychology</option>
+            <option value="SHS">SHS — Senior High School</option>
+            <option value="JHS">JHS — Junior High School</option>
+        </select>
+    </label>
+    <label class="block text-sm font-bold">Year Level *
         <select name="year" required class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-900">
             <option value="" disabled selected>Select Year</option>
             <option value="1st Year">1st Year</option>
@@ -78,7 +98,7 @@
 </details>
 <div id="selectedScholarshipInfo" class="mt-4 hidden rounded-2xl border border-dyci-blue/30 bg-dyci-blue/5 p-4"><div class="text-[10px] font-black uppercase tracking-widest text-dyci-blue dark:text-blue-400">Selected scholarships</div><div id="selectedScholarshipNames" class="mt-2 flex flex-wrap gap-2"></div></div>
 </div>
-<div class="rounded-2xl border bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-800/40"><label class="block text-sm font-bold">Scholarship status *<select name="status" required class="mt-2 w-full rounded-xl border bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900"><option selected>Approved</option><option>Pending</option><option>Not Approved</option></select></label></div>
+<div class="rounded-2xl border bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-800/40"><div class="grid gap-4 sm:grid-cols-2"><label class="block text-sm font-bold">Scholarship status *<select name="status" required class="mt-2 w-full rounded-xl border bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900"><option selected>Approved</option><option>Pending</option><option>Not Approved</option></select></label><label class="block text-sm font-bold">Amount waived (PHP)<input name="waivedAmount" type="number" min="0" step="0.01" placeholder="e.g. 12500.00" class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal tabular-nums dark:border-slate-700 dark:bg-slate-900"></label></div><p id="scholarshipRuleHint" class="mt-2 text-xs text-slate-500 dark:text-slate-400">In-house scholarships do not require approval; external grants (TES/TDP) require approval.</p></div>
 </div>
 <div class="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t px-5 py-3 sm:px-6 dark:border-slate-800"><button type="button" data-click="closeModal" class="rounded-xl border px-4 py-2.5 font-bold dark:border-slate-700">Cancel</button><button type="submit" class="rounded-xl bg-dyci-blue px-5 py-2.5 font-bold text-white hover:bg-dyci-blueDark disabled:opacity-60">Save Student</button></div>
 </form></div></div>
@@ -124,6 +144,11 @@
             <div>
                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assigned Scholarships</span>
                 <div id="viewScholarships" class="mt-3 flex flex-wrap gap-2"></div>
+            </div>
+
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Discount &amp; Scholarship History</span>
+                <div id="viewDiscountHistory" class="mt-2 overflow-x-auto rounded-xl border dark:border-slate-700"></div>
             </div>
         </div>
         <div class="flex flex-wrap justify-end gap-2 border-t p-5 dark:border-slate-800">

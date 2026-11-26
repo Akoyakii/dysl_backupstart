@@ -52,6 +52,13 @@ function requestRecords(request, preview) {
         ({scholars, activities, discountHistory} = records);
         recordsUpdatedAt = Date.now();
         if (Array.isArray(records.catalog)) window.scholarshipCatalog = records.catalog;
+        if (typeof records.dataEntryLocked === "boolean") {
+            window._dataEntryLocked = records.dataEntryLocked;
+            window._dataEntryLockReason = records.dataEntryLockReason || "";
+        }
+        if (Array.isArray(records.semesters)) {
+            window._semesters = records.semesters;
+        }
         const status = document.getElementById("recordsStatus");
         try {
             renderAll();

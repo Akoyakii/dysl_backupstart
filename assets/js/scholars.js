@@ -57,7 +57,7 @@ function renderScholars(){
         
         return `<tr class="border-t dark:border-slate-800">
             <td class="px-5 py-4"><b>${escapeHtml(s.name)}</b><div class="text-xs tabular-nums text-slate-600 dark:text-slate-400">${escapeHtml(s.id)}</div></td>
-            <td class="px-5 py-4">${escapeHtml(s.course)}<div class="mt-1 text-xs text-slate-600 dark:text-slate-300">${escapeHtml([year, semester].filter(Boolean).join(" · ") || "School period not recorded")}</div></td>
+            <td class="px-5 py-4">${escapeHtml(s.course)}${s.program ? ` <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">${escapeHtml(s.program)}</span>` : ""}<div class="mt-1 text-xs text-slate-600 dark:text-slate-300">${escapeHtml([year, semester].filter(Boolean).join(" · ") || "School period not recorded")}</div></td>
             <td class="px-5 py-4"><div class="flex flex-wrap gap-1.5">${names.map(n => `<span class="rounded-full bg-dyci-blue/10 px-2 py-1 text-xs font-bold text-dyci-blue dark:bg-dyci-blue/30 dark:text-blue-300">${escapeHtml(n)}</span>`).join("")}</div></td>
             <td class="px-5 py-4">${scholarStatus(s.status)}</td>
             <td class="px-5 py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">${s.saving ? "Saving\u2026" : escapeHtml(formatPhilippineTime(s.updated))}</td>
@@ -113,10 +113,11 @@ function openViewModal(id) {
 
     document.getElementById("viewName").textContent = student.name;
     document.getElementById("viewId").textContent = student.id;
-    document.getElementById("viewCourse").textContent = student.course;
+    document.getElementById("viewCourse").textContent = student.course + (student.program ? ` (${student.program})` : "");
     document.getElementById("viewStatus").textContent = student.status;
     document.getElementById("viewUpdated").textContent = formatPhilippineTime(student.updated);
-    const {year, semester} = scholarPeriod(student, discountHistory.filter(record => record.id === student.id));
+    const studentHistory = discountHistory.filter(record => record.id === student.id);
+    const {year, semester} = scholarPeriod(student, studentHistory);
     document.getElementById("viewPeriod").textContent = [year, semester].filter(Boolean).join(" · ") || "—";
 
     const statusEl = document.getElementById("viewStatus");
@@ -130,9 +131,38 @@ function openViewModal(id) {
 
     const schContainer = document.getElementById("viewScholarships");
     const names = scholarshipNames(student);
-    schContainer.innerHTML = names.map(n => 
-        `<span class="rounded-xl bg-dyci-blue/10 px-3 py-1.5 text-sm font-bold text-dyci-blue dark:bg-dyci-blue/30 dark:text-blue-300">${escapeHtml(n)}</span>`
-    ).join("");
+    const catalog = new Map((window.scholarshipCatalog || []).map(s => [s[0], s]));
+    schContainer.innerHTML = names.map(n => {
+        const type = catalog.get(n);
+        const codeDesc = scholarshipCodeDescription(n);
+        return `<div class="rounded-xl bg-dyci-blue/10 px-3 py-2 dark:bg-dyci-blue/30">
+            <span class="block text-sm font-bold text-dyci-blue dark:text-blue-300">${escapeHtml(n)}</span>
+            ${codeDesc ? `<span class="block text-xs text-slate-500">${escapeHtml(codeDesc)}</span>` : ""}
+            ${type ? `<span class="block text-xs text-slate-600 dark:text-slate-300">Covers: ${escapeHtml(type[3])} · ${escapeHtml(type[4])}</span>` : ""}
+        </div>`;
+    }).join("");
+
+    // Build discount history table
+    const historyContainer = document.getElementById("viewDiscountHistory");
+    if (historyContainer) {
+        if (studentHistory.length) {
+            const rows = studentHistory.map(record =>
+                `<tr class="border-t dark:border-slate-700">
+                    <td class="px-3 py-2 tabular-nums">${escapeHtml(record.year)}</td>
+                    <td class="px-3 py-2">${escapeHtml(record.semester)}</td>
+                    <td class="px-3 py-2">${record.scholarships.map(n =>
+                        `<span class="mr-1 inline-block rounded-full bg-dyci-blue/10 px-2 py-0.5 text-xs font-semibold text-dyci-blue dark:bg-dyci-blue/30 dark:text-blue-300">${escapeHtml(n)}</span>`
+                    ).join("")}</td>
+                </tr>`
+            ).join("");
+            historyContainer.innerHTML = `<table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <tr><th class="px-3 py-2">School year</th><th class="px-3 py-2">Semester</th><th class="px-3 py-2">Scholarships</th></tr>
+                </thead><tbody>${rows}</tbody></table>`;
+        } else {
+            historyContainer.innerHTML = `<p class="text-sm text-slate-500">No discount history found.</p>`;
+        }
+    }
 
     const modal = document.getElementById("viewModal");
     const decision = document.getElementById("scholarDecision");

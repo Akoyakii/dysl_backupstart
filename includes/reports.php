@@ -3,6 +3,7 @@
 const REPORT_TITLES = [
     'scholar-master-list' => 'Scholar Master List',
     'scholarship-summary' => 'Scholarship Summary',
+    'scholarship-types-summary' => 'Scholarship Types Summary',
     'activity-history' => 'Activity History',
     'requirement-report' => 'Requirement Report',
 ];
@@ -31,6 +32,43 @@ function reportRows(string $report, array $records, array $audit): Generator
             ksort($groups, SORT_NATURAL | SORT_FLAG_CASE);
             foreach ($groups as $key => $group) {
                 yield [...json_decode($key, true, 512, JSON_THROW_ON_ERROR), $group['count'], count($group['students'])];
+            }
+            break;
+        case 'scholarship-types-summary':
+            yield ['Scholarship type', 'Category', 'Coverage', 'Benefit / rate', 'Availments', 'Unique students', 'Approved', 'Pending', 'Not approved', 'Amount waived (PHP)'];
+            $catalog = array_column(scholarshipCatalog(), null, 0);
+            $scholarsById = array_column($records['scholars'], null, 'id');
+            $summary = [];
+            foreach ($records['discountHistory'] as $discount) {
+                $status = $scholarsById[$discount['id']]['status'] ?? 'Pending';
+                $waived = (float) ($discount['waivedAmount'] ?? 0);
+                $list = array_unique($discount['scholarships']);
+                $share = count($list) > 0 ? $waived / count($list) : 0;
+                foreach ($list as $scholarship) {
+                    $summary[$scholarship] ??= ['count' => 0, 'students' => [], 'Approved' => 0, 'Pending' => 0, 'Not Approved' => 0, 'waived' => 0.0];
+                    $summary[$scholarship]['count']++;
+                    $summary[$scholarship]['students'][$discount['id']] = true;
+                    if (isset($summary[$scholarship][$status])) {
+                        $summary[$scholarship][$status]++;
+                    }
+                    $summary[$scholarship]['waived'] += $share;
+                }
+            }
+            ksort($summary, SORT_NATURAL | SORT_FLAG_CASE);
+            foreach ($summary as $name => $row) {
+                $meta = $catalog[$name] ?? [$name, 'Custom / Other', '—', '—', '—'];
+                yield [
+                    $name,
+                    $meta[1],
+                    $meta[3],
+                    $meta[4],
+                    $row['count'],
+                    count($row['students']),
+                    $row['Approved'],
+                    $row['Pending'],
+                    $row['Not Approved'],
+                    number_format($row['waived'], 2, '.', ''),
+                ];
             }
             break;
         case 'activity-history':

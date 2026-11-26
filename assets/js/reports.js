@@ -1,5 +1,26 @@
-let scholarshipBarChart = null, scholarshipLineChart = null;
+let scholarshipBarChart = null, scholarshipLineChart = null, departmentTrendChart = null;
 let dashboardStatusChart = null, dashboardUsageChart = null;
+let dashboardDeptChart = null, dashboardCoverageChart = null;
+
+const SCHOLARSHIP_CODE_DESCRIPTIONS = {
+    "DISSF": "Discounted In-house Student Scholarship Fund",
+    "TES": "Tertiary Education Subsidy",
+    "TDP": "Tulong Dunong Program",
+    "AUTH": "Authorization-based scholarship",
+    "ENT": "Entrance Scholarship",
+    "EMP": "Employee Dependent Discount",
+    "DYH": "Dr. Yanga Hospital Dependent Discount",
+    "SA": "Student Assistant Program",
+    "PWD": "Person With Disability discount",
+    "DISTRICT": "District-level competition award",
+    "PROVINCIAL": "Provincial-level competition award",
+    "INTERNATIONAL": "International-level competition award",
+};
+
+function scholarshipCodeDescription(name) {
+    const code = name.replace(/\s*\d.*$/, "").replace(/\s*[—–-]\s*.+$/, "").trim();
+    return SCHOLARSHIP_CODE_DESCRIPTIONS[code] || "";
+}
 
 function renderDashboardMetrics() {
     const statuses = ["Approved", "Pending", "Not Approved"];
@@ -8,30 +29,77 @@ function renderDashboardMetrics() {
         if (counts.has(status)) counts.set(status, counts.get(status) + 1);
     }
     const [approved, pending, rejected] = counts.values();
+    const total = approved + pending + rejected;
     const decided = approved + rejected;
     const usage = scholarshipUsageEntries(discountHistory, "").slice(0, 5);
-    document.getElementById("dashboardApprovalRate").textContent = decided ? `${Math.round(approved / decided * 100)}%` : "\u2014";
-    document.getElementById("dashboardApprovalSummary").textContent = decided
-        ? `${approved} approved out of ${decided} completed decisions` : "No completed decisions";
+    const years = [...new Set(discountHistory.map(r => r.year))].sort();
+
+    // Status cards
+    document.getElementById("dashboardApprovedCount").textContent = approved;
+    document.getElementById("dashboardApprovalRate").textContent = decided
+        ? `${Math.round(approved / decided * 100)}% of ${decided} decided` : "";
     document.getElementById("dashboardPendingCount").textContent = pending;
-    document.getElementById("dashboardStatusSummary").textContent = approved + pending + rejected
+    document.getElementById("dashboardRejectedCount").textContent = rejected;
+    document.getElementById("dashboardYearCount").textContent = years.length;
+
+    document.getElementById("dashboardStatusSummary").textContent = total
         ? `${approved} approved, ${pending} pending, ${rejected} not approved` : "No scholar decisions to show.";
     const chartAvailable = typeof Chart !== "undefined";
     document.getElementById("dashboardUsageSummary").textContent = usage.length
         ? (chartAvailable ? "Top five programs by recorded scholarship assignments." : usage.map(([name, count]) => `${name} (${count})`).join(", "))
         : "No scholarship assignments to show.";
+
+    // Department breakdown
+    const deptCounts = Object.create(null);
+    for (const s of scholars) {
+        const dept = (s.course || "").replace(/\s*[·•–—-]\s*\d+(?:st|nd|rd|th)\s+Year$/i, "").trim() || "Unknown";
+        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+    }
+    const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    document.getElementById("dashboardDeptSummary").textContent = deptEntries.length
+        ? `${Object.keys(deptCounts).length} college${Object.keys(deptCounts).length === 1 ? "" : "s"} with scholars.`
+        : "No scholars to show.";
+
+    // Coverage breakdown
+    const coverageCounts = Object.create(null);
+    const catalog = new Map((window.scholarshipCatalog || []).map(s => [s[0], s[3]]));
+    for (const row of discountHistory) {
+        for (const name of row.scholarships) {
+            const cov = catalog.get(name) || "Other";
+            coverageCounts[cov] = (coverageCounts[cov] || 0) + 1;
+        }
+    }
+    const coverageEntries = Object.entries(coverageCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    document.getElementById("dashboardCoverageSummary").textContent = coverageEntries.length
+        ? `${coverageEntries.reduce((n, [, c]) => n + c, 0)} availments across ${coverageEntries.length} coverage types.`
+        : "No availment records to show.";
+
     if (!document.getElementById("dashboard").classList.contains("active")) return;
 
     dashboardStatusChart?.destroy();
     dashboardUsageChart?.destroy();
-    dashboardStatusChart = dashboardUsageChart = null;
+    dashboardDeptChart?.destroy();
+    dashboardCoverageChart?.destroy();
+    dashboardStatusChart = dashboardUsageChart = dashboardDeptChart = dashboardCoverageChart = null;
     const statusPlot = document.getElementById("dashboardStatusPlot");
     const usagePlot = document.getElementById("dashboardUsagePlot");
-    statusPlot.hidden = !chartAvailable || !(approved + pending + rejected);
+    const deptPlot = document.getElementById("dashboardDeptPlot");
+    const coveragePlot = document.getElementById("dashboardCoveragePlot");
+    statusPlot.hidden = !chartAvailable || !total;
     usagePlot.hidden = !chartAvailable || !usage.length;
+    deptPlot.hidden = !chartAvailable || !deptEntries.length;
+    coveragePlot.hidden = !chartAvailable || !coverageEntries.length;
     const dark = document.documentElement.classList.contains("dark");
     const ticks = dark ? "#e7e7ea" : "#475569";
+    const grid = dark ? "#39393f" : "#e2e8f0";
     const options = {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}};
+    const barOptions = (indexAxis = "y") => ({...options, indexAxis, scales: {
+        x: {beginAtZero: true, grid: {color: grid}, ticks: {color: ticks, precision: 0}},
+        y: {grid: {display: false}, ticks: {color: ticks, callback(value) {
+            const name = this.getLabelForValue(value);
+            return name.length > 20 ? name.slice(0, 19) + "\u2026" : name;
+        }}}
+    }});
     if (!statusPlot.hidden) {
         dashboardStatusChart = new Chart(document.getElementById("dashboardStatusChart"), {
             type: "doughnut",
@@ -49,13 +117,30 @@ function renderDashboardMetrics() {
                 labels: usage.map(([name]) => name),
                 datasets: [{label: "Assignments", data: usage.map(([, count]) => count), backgroundColor: dark ? "#fff" : "#1a3b9c", borderRadius: 4}]
             },
-            options: {...options, indexAxis: "y", scales: {
-                x: {beginAtZero: true, grid: {color: dark ? "#39393f" : "#e2e8f0"}, ticks: {color: ticks, precision: 0}},
-                y: {grid: {display: false}, ticks: {color: ticks, callback(value) {
-                    const name = this.getLabelForValue(value);
-                    return name.length > 20 ? name.slice(0, 19) + "\u2026" : name;
-                }}}
-            }}
+            options: barOptions()
+        });
+    }
+    if (!deptPlot.hidden) {
+        dashboardDeptChart = new Chart(document.getElementById("dashboardDeptChart"), {
+            type: "bar",
+            data: {
+                labels: deptEntries.map(([name]) => name),
+                datasets: [{label: "Scholars", data: deptEntries.map(([, count]) => count), backgroundColor: dark ? "#F4B925" : "#1A3B9C", borderRadius: 4}]
+            },
+            options: barOptions()
+        });
+    }
+    if (!coveragePlot.hidden) {
+        const colors = ["#1A3B9C", "#15976f", "#d9a11b", "#d95370", "#7c3aed", "#0891b2"];
+        dashboardCoverageChart = new Chart(document.getElementById("dashboardCoverageChart"), {
+            type: "doughnut",
+            data: {
+                labels: coverageEntries.map(([name]) => name),
+                datasets: [{data: coverageEntries.map(([, count]) => count),
+                    backgroundColor: dark ? colors.map(c => c + "cc") : colors, borderWidth: 0}]
+            },
+            options: {...options, cutout: "55%", plugins: {legend: {display: true, position: "right",
+                labels: {color: ticks, boxWidth: 12, padding: 8, font: {size: 11}}}}}
         });
     }
 }
@@ -233,6 +318,48 @@ function renderAnalytics(){
             }
         }
     });
+
+    // Department trend chart
+    const deptPlot = document.getElementById("departmentTrendPlot");
+    const deptSummary = document.getElementById("departmentTrendSummary");
+    if (departmentTrendChart) departmentTrendChart.destroy();
+    departmentTrendChart = null;
+    if (deptPlot && deptSummary) {
+        const studentDepts = new Map(scholars.map(s => [
+            s.id,
+            (s.course || "").replace(/\s*[·•–—-]\s*\d+(?:st|nd|rd|th)\s+Year$/i, "").trim() || "Unknown"
+        ]));
+        const deptCounts = Object.create(null);
+        for (const r of rows) {
+            const dept = studentDepts.get(r.id) || "Unknown";
+            const count = r.scholarships.filter(s => !selectedScholarship || s === selectedScholarship).length;
+            deptCounts[dept] = (deptCounts[dept] || 0) + count;
+        }
+        const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]);
+        deptPlot.hidden = !deptEntries.length || typeof Chart === "undefined";
+        deptSummary.textContent = deptEntries.length
+            ? `Filtered availments across ${deptEntries.length} college${deptEntries.length === 1 ? "" : "s"} / department${deptEntries.length === 1 ? "" : "s"}.`
+            : "No department data matches the selected filters.";
+        if (!deptPlot.hidden) {
+            departmentTrendChart = new Chart(document.getElementById("departmentTrendChart"), {
+                type: "bar",
+                data: {
+                    labels: deptEntries.map(([name]) => name),
+                    datasets: [{label: "Availments", data: deptEntries.map(([, count]) => count), backgroundColor: dark ? "#F4B925" : "#1A3B9C", borderRadius: 4}]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {legend: {display: false}},
+                    scales: {
+                        x: {beginAtZero: true, grid: {color: gridColor}, ticks: {color: tickColor, precision: 0}},
+                        y: {grid: {display: false}, ticks: {color: tickColor}}
+                    }
+                }
+            });
+        }
+    }
 }
 
 function openScholarshipUsage(name) {

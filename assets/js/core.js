@@ -55,7 +55,12 @@ function bindRecordControls() {
             openScholarshipUsage: (_event, button) => openScholarshipUsage(button.dataset.scholarshipName),
             openAuditDetails: (_event, button) => openAuditDetails(Number(button.dataset.auditIndex), button.dataset.auditLabel),
             exportScholarshipUsage,
-            openViewModal: (_event, button) => openViewModal(button.dataset.studentId)
+            openViewModal: (_event, button) => openViewModal(button.dataset.studentId),
+            dashboardCardNav: (_event, button) => dashboardCardNav(button.dataset.target, button.dataset.filter),
+            setScholarshipView: (_event, button) => setScholarshipView(button.dataset.mode),
+            toggleDataLock,
+            toggleScholarshipDisabled: (_event, button) => toggleScholarshipDisabled(button.dataset.scholarshipName, button.dataset.disabled === "true"),
+            deleteScholarship: (_event, button) => deleteScholarship(button.dataset.scholarshipName),
         },
         change: {
             renderAnalytics, renderActivity, renderScholars, renderScholarships, updateSelectedScholarships,
@@ -68,7 +73,7 @@ function bindRecordControls() {
             renderScholarshipUsageDetails: () => renderScholarshipUsageDetails(),
             formatStudentId: (_event, input) => formatStudentId(input)
         },
-        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet}
+        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet, submitNewSemester}
     };
     Object.entries(actions).forEach(([type, handlers]) => {
         document.addEventListener(type, event => {
@@ -170,7 +175,10 @@ async function submitScholar(e) {
         try {
             const student = scholars.find(scholar => scholar.id === editId);
             const status = f.get("status");
-            await requestRecords({action: "edit-scholar", id: editId, newId, name, scholarship: selected, status},
+            const waivedRaw = (f.get("waivedAmount") || "").trim();
+            const payload = {action: "edit-scholar", id: editId, newId, name, scholarship: selected, status};
+            if (waivedRaw !== "") payload.waivedAmount = Number(waivedRaw);
+            await requestRecords(payload,
                 student && newId === editId ? {...student, name, scholarship: selected, status} : undefined);
             const search = document.getElementById("search");
             if (newId !== editId && search.value.trim() === editId) {
@@ -194,10 +202,12 @@ async function submitScholar(e) {
     let lastName = (f.get("lastName") || "").trim();
     let studentId = (f.get("id") || "").trim();
     let course = (f.get("course") || "").trim();
+    let program = (f.get("program") || "").trim();
     let year = (f.get("year") || "").trim();
     let period = (f.get("period") || "").trim();
     let semester = (f.get("semester") || "").trim();
     let status = (f.get("status") || "").trim();
+    let waivedRaw = (f.get("waivedAmount") || "").trim();
 
     if (!firstName || !lastName || !studentId || !course || !year || !period || !semester || !status) {
         showToast("Please fill in all required fields.");
@@ -224,6 +234,8 @@ async function submitScholar(e) {
         name: fullName, 
         id: studentId, 
         course: courseYear, 
+        ...(program ? {program} : {}),
+        ...(waivedRaw !== "" ? {waivedAmount: Number(waivedRaw)} : {}),
         period: period, 
         semester,
         scholarship: selected, 
@@ -268,6 +280,18 @@ function go(v){
     if (v === "activity") loadAuditLog();
     if (["dashboard", "scholars", "scholarships", "reports"].includes(v)) loadDatabaseRecords();
     closeSidebar();
+}
+
+function dashboardCardNav(target, filter) {
+    if (filter && target === "scholars") {
+        document.getElementById("filter").value = filter;
+        document.getElementById("scholarYear").value = "";
+        document.getElementById("scholarSemester").value = "";
+        document.getElementById("scholarDepartment").value = "";
+        document.getElementById("search").value = "";
+        document.getElementById("scholarPagination").dataset.page = "1";
+    }
+    go(target);
 }
 
 // Dark mode, sidebar, toast
@@ -329,6 +353,9 @@ function openModal(id){
         form.elements.namedItem("editName").value = student.name;
         form.elements.namedItem("newId").value = student.id;
         form.elements.namedItem("status").value = student.status;
+        if (form.elements.namedItem("waivedAmount")) {
+            form.elements.namedItem("waivedAmount").value = student.waivedAmount ?? "";
+        }
     }
     document.getElementById("scholarshipDisclosure").open = Boolean(student);
     document.getElementById("studentScholarshipSearch").value = "";
@@ -343,14 +370,97 @@ function closeModal(){
 
 // Render everything
 function renderAll(){
+    syncCustomSemesters();
     renderScholars();
     renderRecent();
     renderScholarships();
     renderActivity();
     renderReports();
-    // FIXED: Removed Math.max(24, ...) so it shows the actual count
     document.getElementById("statScholars").textContent = scholars.length;
     document.getElementById("dashboardScholarshipCount").textContent = window.scholarshipCatalog?.length || 0;
     document.getElementById("dashboardDiscountCount").textContent = discountHistory.length;
     renderDashboardMetrics();
+    updateDataLockBanner();
+}
+
+function syncCustomSemesters() {
+    const base = ["1st Semester", "2nd Semester", "Summer"];
+    const custom = (window._semesters || []).map(s => s.semester).filter(Boolean);
+    const allTerms = [...new Set([...base, ...custom])];
+    updateSelectOptions("scholarSemester", "All semesters", allTerms);
+    const analyticsSem = document.getElementById("analyticsSemester");
+    if (analyticsSem) {
+        const current = analyticsSem.value;
+        analyticsSem.replaceChildren(new Option("All Semesters", "All"), ...allTerms.map(t => new Option(t, t)));
+        analyticsSem.value = allTerms.includes(current) ? current : "All";
+    }
+    const modalSem = document.querySelector('#scholarForm select[name="semester"]');
+    if (modalSem) {
+        const current = modalSem.value;
+        modalSem.replaceChildren(new Option("Select semester", "", true, true), ...allTerms.map(t => new Option(t, t)));
+        modalSem.options[0].disabled = true;
+        if (allTerms.includes(current)) modalSem.value = current;
+    }
+}
+
+function updateDataLockBanner() {
+    const banner = document.getElementById("dashboardLockBanner");
+    if (banner) {
+        if (window._dataEntryLocked) {
+            banner.textContent = "Data entry is locked" + (window._dataEntryLockReason ? ": " + window._dataEntryLockReason : "") + ". Staff cannot add or edit records.";
+            banner.classList.remove("hidden");
+        } else {
+            banner.classList.add("hidden");
+        }
+    }
+    const lockBtn = document.getElementById("dataLockToggleBtn");
+    const lockText = document.getElementById("dataLockStatusText");
+    if (lockBtn && lockText) {
+        lockBtn.textContent = window._dataEntryLocked ? "Unlock staff data entry" : "Lock staff data entry";
+        lockText.textContent = window._dataEntryLocked
+            ? "Locked" + (window._dataEntryLockReason ? " — " + window._dataEntryLockReason : "")
+            : "Unlocked (staff can add and edit records)";
+    }
+}
+
+async function submitNewSemester(event) {
+    event.preventDefault();
+    const form = event.target;
+    const button = form.querySelector('[type="submit"]');
+    if (button.disabled) return;
+    const f = new FormData(form);
+    button.disabled = true;
+    try {
+        await requestRecords({
+            action: "add-semester",
+            schoolYear: (f.get("schoolYear") || "").trim(),
+            semester: (f.get("semester") || "").trim(),
+        });
+        form.reset();
+        showToast("Semester added.");
+    } catch (error) {
+        showToast(error.message);
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function toggleDataLock() {
+    const button = document.querySelector('[data-click="toggleDataLock"]');
+    if (!button || button.disabled) return;
+    const locking = !window._dataEntryLocked;
+    let reason = "";
+    if (locking) {
+        reason = prompt("Enter a lock reason (e.g. 'End of semester reporting'):");
+        if (reason === null) return;
+    }
+    button.disabled = true;
+    try {
+        await requestRecords({action: "toggle-data-lock", locked: locking, reason: reason.trim()});
+        showToast(locking ? "Data entry locked." : "Data entry unlocked.");
+    } catch (error) {
+        showToast(error.message);
+    } finally {
+        button.disabled = false;
+    }
 }

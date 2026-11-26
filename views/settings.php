@@ -14,7 +14,16 @@ $moreBackups = count($backupList) > 15;
 $backupList = array_slice($backupList, 0, 15);
 ?>
 <section id="settings" class="view">
-    <h1 class="mb-6 text-balance text-3xl font-black">Database backup and restoration</h1>
+    <h1 class="mb-6 text-balance text-3xl font-black">Settings &amp; Administration</h1>
+    <div class="mb-6 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        <h2 class="text-lg font-bold">Staff data entry lock</h2>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Lock staff data entry during reporting periods or at the end of a semester so staff cannot add or edit records. Administrators retain full access.</p>
+        <div class="mt-4 flex flex-wrap items-center gap-4">
+            <button type="button" data-click="toggleDataLock" id="dataLockToggleBtn" class="rounded-xl bg-dyci-blue px-4 py-2.5 text-sm font-bold text-white hover:bg-dyci-blueDark disabled:opacity-60">Lock staff data entry</button>
+            <span id="dataLockStatusText" class="text-sm font-semibold text-slate-600 dark:text-slate-300">Checking lock status…</span>
+        </div>
+    </div>
+    <h2 class="mb-4 text-xl font-black">Database backup and restoration</h2>
     <div class="rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <p class="text-sm text-slate-600 dark:text-slate-300">Save accounts, student records, scholarships, signup requests, reports, and audit history. Restoring replaces current records and signs everyone out.</p>
         <?php if ($backupNotice): ?><p role="status" class="mt-4 text-sm font-semibold text-emerald-800 dark:text-emerald-300"><?= htmlspecialchars($backupNotice, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>

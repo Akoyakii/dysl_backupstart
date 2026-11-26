@@ -78,6 +78,10 @@ try {
             respond(200, ['version' => 1, 'records' => $records]);
         }
         $records['catalog'] = scholarshipCatalog($db);
+        $lock = dataEntryLockStatus($db);
+        $records['dataEntryLocked'] = $lock['locked'];
+        $records['dataEntryLockReason'] = $lock['reason'];
+        $records['semesters'] = availableSemesters($db);
         if ($logRead) writeAccessAuditEvent($db, $account, 'records.viewed');
         respond(200, $records);
     }
@@ -99,6 +103,12 @@ try {
         $request = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
     $action = $request['action'] ?? '';
+    if ($action === 'toggle-data-lock' && !$isAdmin) {
+        respond(403, ['error' => 'Only administrators can lock or unlock staff data entry.']);
+    }
+    if (!$isAdmin && dataEntryLockStatus($db)['locked']) {
+        respond(403, ['error' => 'Staff data entry is currently locked by an administrator.']);
+    }
     $batch = null;
     if ($action === 'import-spreadsheet' && $contentType === 'multipart/form-data') {
         $batch = spreadsheetScholarBatch($_FILES['spreadsheet'] ?? [], $db);
@@ -107,7 +117,7 @@ try {
     } elseif ($action === 'restore' && ($request['version'] ?? null) === 1 && is_array($request['records'] ?? null)) {
         $batch = $request['records'];
         if (!$isAdmin) $batch['activities'] = [];
-    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar'], true) &&
+    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'toggle-data-lock', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
         !(in_array($action, ['add-scholarship', 'edit-scholarship'], true) && is_array($request['type'] ?? null))) {
         throw new InvalidArgumentException('Invalid records request.');
     }
@@ -149,6 +159,25 @@ try {
         } elseif ($action === 'edit-scholarship') {
             $change = saveScholarshipType($db, $request['type'], true);
             if ($change !== null) writeAuditEvent($db, $account, 'scholarship.updated', $change);
+        } elseif ($action === 'toggle-scholarship-disabled') {
+            $change = toggleScholarshipTypeDisabled($db, (string) ($request['name'] ?? ''), (bool) ($request['disabled'] ?? false));
+            writeAuditEvent($db, $account, 'scholarship.updated', $change);
+        } elseif ($action === 'delete-scholarship') {
+            $name = (string) ($request['name'] ?? '');
+            deleteScholarshipType($db, $name);
+            writeAuditEvent($db, $account, 'scholarship.deleted', ['Name' => $name]);
+        } elseif ($action === 'toggle-data-lock') {
+            $lockResult = setDataEntryLock($db, (bool) ($request['locked'] ?? false), (string) ($request['reason'] ?? ''));
+            writeAuditEvent($db, $account, 'system.data_lock_changed', [
+                'Status' => $lockResult['locked'] ? 'Locked' : 'Unlocked',
+                'Reason' => $lockResult['reason'] ?: 'None',
+            ]);
+        } elseif ($action === 'add-semester') {
+            $addedSem = addSemester($db, (string) ($request['schoolYear'] ?? ''), (string) ($request['semester'] ?? ''));
+            writeAuditEvent($db, $account, 'system.semester_added', [
+                'School year' => $addedSem['school_year'],
+                'Semester' => $addedSem['semester'],
+            ]);
         } else {
             $insert = $db->prepare('INSERT INTO records (kind, student_id, payload) VALUES (?, ?, ?)');
             foreach ($kinds as $kind) {
@@ -168,6 +197,10 @@ try {
     try {
         $records = readRecords($db, $isAdmin);
         $records['catalog'] = scholarshipCatalog($db);
+        $lock = dataEntryLockStatus($db);
+        $records['dataEntryLocked'] = $lock['locked'];
+        $records['dataEntryLockReason'] = $lock['reason'];
+        $records['semesters'] = availableSemesters($db);
     } catch (Throwable $error) {
         error_log('ScholarHub saved records but could not refresh the response.');
         respond(503, ['error' => 'Changes were saved. Reload the records to see the updated data.']);

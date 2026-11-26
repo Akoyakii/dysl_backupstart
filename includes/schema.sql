@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS records (
 -- Lock this row before adding or restoring records to serialize writes.
 CREATE TABLE IF NOT EXISTS record_write_lock (
     id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
-    session_epoch INT UNSIGNED NOT NULL DEFAULT 0
+    session_epoch INT UNSIGNED NOT NULL DEFAULT 0,
+    data_entry_locked TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    lock_reason VARCHAR(255) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS database_backups (
@@ -71,7 +73,16 @@ CREATE TABLE IF NOT EXISTS scholarship_types (
     name VARCHAR(120) NOT NULL PRIMARY KEY,
     category VARCHAR(80) NOT NULL,
     coverage VARCHAR(255) NOT NULL,
-    benefit VARCHAR(100) NOT NULL
+    benefit VARCHAR(100) NOT NULL,
+    disabled TINYINT UNSIGNED NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS semesters (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    school_year VARCHAR(20) NOT NULL,
+    semester VARCHAR(20) NOT NULL,
+    created_at DATETIME NOT NULL,
+    UNIQUE KEY year_semester (school_year, semester)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS report_archive (

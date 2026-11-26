@@ -18,9 +18,23 @@
     <div class="mt-4 grid gap-3 sm:grid-cols-2">
         <a href="report-archive?preview=scholar-master-list#report-preview" class="rounded-xl border p-3 font-semibold text-dyci-blue hover:border-dyci-blue dark:border-slate-700 dark:text-blue-300">Scholar Master List</a>
         <a href="report-archive?preview=scholarship-summary#report-preview" class="rounded-xl border p-3 font-semibold text-dyci-blue hover:border-dyci-blue dark:border-slate-700 dark:text-blue-300">Scholarship Summary</a>
+        <a href="report-archive?preview=scholarship-types-summary#report-preview" class="rounded-xl border p-3 font-semibold text-dyci-blue hover:border-dyci-blue dark:border-slate-700 dark:text-blue-300">Scholarship Types Summary <span class="block text-sm font-normal text-slate-600 dark:text-slate-300">Coverage, benefit rates, status counts, and amount waived</span></a>
         <?php if ($isAdmin): ?><a href="report-archive?preview=activity-history#report-preview" class="rounded-xl border p-3 font-semibold text-dyci-blue hover:border-dyci-blue dark:border-slate-700 dark:text-blue-300">Activity History <span class="block text-sm font-normal text-slate-600 dark:text-slate-300">Latest 100 audit events and earlier activity</span></a><?php endif; ?>
         <a href="report-archive?preview=requirement-report#report-preview" class="rounded-xl border p-3 font-semibold text-dyci-blue hover:border-dyci-blue dark:border-slate-700 dark:text-blue-300">Requirement Report <span class="block text-sm font-normal text-slate-600 dark:text-slate-300">Missing student record fields and scholarships</span></a>
     </div>
+</details>
+<details class="mb-6 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <summary class="cursor-pointer font-bold text-dyci-blue dark:text-blue-300">Manage semesters</summary>
+    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Add a new school year and semester option for student records and reports.</p>
+    <form id="addSemesterForm" data-submit="submitNewSemester" class="mt-3 flex flex-wrap items-end gap-3">
+        <label class="text-sm font-semibold">School year
+            <input name="schoolYear" required pattern="\d{4}[-–]\d{4}" placeholder="2026-2027" class="mt-1 block rounded-xl border bg-slate-50 px-3 py-2 text-sm tabular-nums dark:border-slate-700 dark:bg-slate-800">
+        </label>
+        <label class="text-sm font-semibold">Semester
+            <input name="semester" required maxlength="20" placeholder="e.g. 1st Semester or Midyear" class="mt-1 block rounded-xl border bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
+        </label>
+        <button type="submit" class="rounded-xl bg-dyci-blue px-4 py-2 text-sm font-bold text-white hover:bg-dyci-blueDark disabled:opacity-60">Add semester</button>
+    </form>
 </details>
 <?php endif; ?>
 <div class="mb-5 rounded-2xl border bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -43,6 +57,11 @@
     <div id="scholarshipUsagePlot" class="relative mt-4 h-72" hidden><canvas id="scholarshipPieChart"></canvas></div>
 </div>
 <div class="rounded-2xl border bg-white p-6 dark:border-slate-800 dark:bg-slate-900"><b>Scholarship Availments Over Time</b><p class="mt-1 text-xs text-slate-500">Filtered assignment count by school year.</p><div class="chart-wrap mt-4"><canvas id="scholarshipLineChart"></canvas></div></div>
+<div class="min-w-0 rounded-2xl border bg-white p-6 dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
+    <h2 class="font-bold">Trends by Department</h2>
+    <p id="departmentTrendSummary" class="mt-1 text-xs text-slate-600 dark:text-slate-400"></p>
+    <div id="departmentTrendPlot" class="relative mt-4 h-64" hidden><canvas id="departmentTrendChart"></canvas></div>
+</div>
 <div class="min-w-0 rounded-2xl border bg-white p-6 dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
     <h2 class="font-bold">Scholarship Usage Details</h2>
     <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,16rem)]">

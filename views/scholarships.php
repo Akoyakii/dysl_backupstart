@@ -31,11 +31,15 @@
 </dialog>
 <?php endif; ?>
 <div class="mb-5 rounded-2xl border bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-<div class="grid gap-3 md:grid-cols-[1fr_220px]">
-<div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">⌕</span><input id="scholarshipSearch" data-input="renderScholarships" class="w-full rounded-xl border bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none focus:border-dyci-blue dark:border-slate-700 dark:bg-slate-800" placeholder="Search scholarship name, coverage, percentage..."></div>
+<div class="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+<div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">⌕</span><input id="scholarshipSearch" data-input="renderScholarships" class="w-full rounded-xl border bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none focus:border-dyci-blue dark:border-slate-700 dark:bg-slate-800" placeholder="Search scholarship name, code, coverage, percentage..."></div>
 <select id="scholarshipFilter" aria-label="Scholarship category" data-change="renderScholarships" class="rounded-xl border bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-800">
 <option value="">All categories</option>
 </select>
+<div class="flex rounded-xl border dark:border-slate-700" role="radiogroup" aria-label="View mode">
+    <button type="button" id="scholarshipViewTile" data-click="setScholarshipView" data-mode="tile" role="radio" aria-checked="true" class="rounded-l-xl px-3 py-2 text-sm font-semibold transition-colors" title="Tile view">▦ Tiles</button>
+    <button type="button" id="scholarshipViewList" data-click="setScholarshipView" data-mode="list" role="radio" aria-checked="false" class="rounded-r-xl px-3 py-2 text-sm font-semibold transition-colors" title="List view">☰ List</button>
+</div>
 </div>
 </div>
 <div id="scholarshipCards" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>

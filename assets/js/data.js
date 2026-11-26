@@ -1,4 +1,4 @@
-let scholars = [], activities = [], discountHistory = [], audit = [];
+let scholars = [], activities = [], discountHistory = [], audit = [], renewals = [];
 let recordsQueue = Promise.resolve();
 let recordsUpdatedAt = 0;
 let recordsRefresh = null;
@@ -59,6 +59,7 @@ function requestRecords(request, preview) {
         if (Array.isArray(records.semesters)) {
             window._semesters = records.semesters;
         }
+        renewals = Array.isArray(records.renewals) ? records.renewals : [];
         const status = document.getElementById("recordsStatus");
         try {
             renderAll();

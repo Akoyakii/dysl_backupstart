@@ -82,6 +82,7 @@ try {
         $records['dataEntryLocked'] = $lock['locked'];
         $records['dataEntryLockReason'] = $lock['reason'];
         $records['semesters'] = availableSemesters($db);
+        $records['renewals'] = readRenewals($db);
         if ($logRead) writeAccessAuditEvent($db, $account, 'records.viewed');
         respond(200, $records);
     }
@@ -117,7 +118,7 @@ try {
     } elseif ($action === 'restore' && ($request['version'] ?? null) === 1 && is_array($request['records'] ?? null)) {
         $batch = $request['records'];
         if (!$isAdmin) $batch['activities'] = [];
-    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'toggle-data-lock', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
+    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'carry-over-renewals', 'decide-renewal', 'toggle-data-lock', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
         !(in_array($action, ['add-scholarship', 'edit-scholarship'], true) && is_array($request['type'] ?? null))) {
         throw new InvalidArgumentException('Invalid records request.');
     }
@@ -153,6 +154,15 @@ try {
         } elseif ($action === 'edit-scholar') {
             $changes = editScholarAssignments($db, $request);
             if ($changes !== null) writeAuditEvent($db, $account, 'scholar.assignments_updated', $changes);
+        } elseif ($action === 'carry-over-renewals') {
+            $summary = carryOverRenewals($db, $request);
+            writeAuditEvent($db, $account, 'renewal.carried_over', [
+                'Target term' => $summary['targetYear'] . ' · ' . $summary['targetSemester'],
+                'Created' => $summary['created'],
+                'Already present' => $summary['skipped'],
+            ]);
+        } elseif ($action === 'decide-renewal') {
+            writeAuditEvent($db, $account, 'renewal.status_changed', decideRenewal($db, $request));
         } elseif ($action === 'add-scholarship') {
             $type = saveScholarshipType($db, $request['type']);
             writeAuditEvent($db, $account, 'scholarship.created', ['Name' => $type['name'], 'Category' => $type['category']]);
@@ -201,6 +211,7 @@ try {
         $records['dataEntryLocked'] = $lock['locked'];
         $records['dataEntryLockReason'] = $lock['reason'];
         $records['semesters'] = availableSemesters($db);
+        $records['renewals'] = readRenewals($db);
     } catch (Throwable $error) {
         error_log('ScholarHub saved records but could not refresh the response.');
         respond(503, ['error' => 'Changes were saved. Reload the records to see the updated data.']);

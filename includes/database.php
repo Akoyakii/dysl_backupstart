@@ -484,3 +484,158 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
         'activities' => [],
     ];
 }
+
+function readRenewals(PDO $db): array
+{
+    try {
+        $rows = $db->query('SELECT id, student_id, student_name, course, scholarship, school_year, semester,
+            status, source_year, source_semester,
+            DATE_FORMAT(updated_at, "%Y-%m-%d %H:%i UTC") AS updated
+            FROM scholarship_assignments
+            ORDER BY updated_at DESC, id DESC')->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['id'] = (int) $row['id'];
+        }
+        return $rows;
+    } catch (PDOException $error) {
+        if ((int) ($error->errorInfo[1] ?? 0) === 1146) {
+            return [];
+        }
+        throw $error;
+    }
+}
+
+function carryOverRenewals(PDO $db, array $request): array
+{
+    $targetYear = preg_replace('/^(\d{4})\s*[-–—]\s*(\d{4})$/u', '$1–$2', trim((string) ($request['targetYear'] ?? '')));
+    $targetSemester = trim((string) ($request['targetSemester'] ?? ''));
+    $items = $request['items'] ?? null;
+    if (!preg_match('/^(\d{4})\x{2013}(\d{4})$/uD', $targetYear, $years) || (int) $years[2] !== (int) $years[1] + 1) {
+        throw new InvalidArgumentException('Enter a target school year such as 2026-2027.');
+    }
+    $validTerms = array_values(array_unique([...SCHOLAR_SEMESTERS, ...array_column(availableSemesters($db), 'semester')]));
+    if (!in_array($targetSemester, $validTerms, true)) {
+        throw new InvalidArgumentException('Choose a valid target semester.');
+    }
+    if (!is_array($items) || !$items || count($items) > 500) {
+        throw new InvalidArgumentException('Select between 1 and 500 assignments to carry over.');
+    }
+
+    $knownCatalog = array_flip(array_column(scholarshipCatalog($db), 0));
+    $findScholar = $db->prepare("SELECT payload FROM records WHERE kind = 'scholars' AND student_id = ?");
+    $insert = $db->prepare('INSERT IGNORE INTO scholarship_assignments
+        (student_id, student_name, course, scholarship, school_year, semester, status, source_year, source_semester, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, "Pending", ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())');
+
+    $created = 0;
+    $skipped = 0;
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            throw new InvalidArgumentException('Invalid renewal item.');
+        }
+        $studentId = trim((string) ($item['studentId'] ?? ''));
+        $scholarship = trim((string) ($item['scholarship'] ?? ''));
+        $sourceYear = preg_replace('/^(\d{4})\s*[-–—]\s*(\d{4})$/u', '$1–$2', trim((string) ($item['sourceYear'] ?? '')));
+        $sourceSemester = trim((string) ($item['sourceSemester'] ?? ''));
+        if ($studentId === '' || strlen($studentId) > 64 || $scholarship === '' || strlen($scholarship) > 120) {
+            throw new InvalidArgumentException('Each renewal item requires a valid student ID and scholarship.');
+        }
+        $findScholar->execute([$studentId]);
+        $payload = $findScholar->fetchColumn();
+        if ($payload === false) {
+            throw new DomainException("Student $studentId could not be found.");
+        }
+        $scholar = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        $allowedForStudent = array_merge((array) ($scholar['scholarship'] ?? []), array_keys($knownCatalog));
+        if (!in_array($scholarship, $allowedForStudent, true)) {
+            throw new InvalidArgumentException("Scholarship $scholarship is not valid.");
+        }
+        $insert->execute([
+            $scholar['id'],
+            $scholar['name'],
+            $scholar['course'],
+            $scholarship,
+            $targetYear,
+            $targetSemester,
+            $sourceYear !== '' ? $sourceYear : null,
+            $sourceSemester !== '' ? $sourceSemester : null,
+        ]);
+        if ($insert->rowCount() === 1) {
+            $created++;
+        } else {
+            $skipped++;
+        }
+    }
+    if ($created === 0) {
+        throw new DomainException("All selected assignments already exist in $targetYear · $targetSemester.");
+    }
+    return [
+        'created' => $created,
+        'skipped' => $skipped,
+        'targetYear' => $targetYear,
+        'targetSemester' => $targetSemester,
+    ];
+}
+
+function decideRenewal(PDO $db, array $request): array
+{
+    $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    $status = $request['status'] ?? null;
+    if ($id === false || !in_array($status, ['Approved', 'Not Approved'], true)) {
+        throw new InvalidArgumentException('Choose a valid renewal record and decision.');
+    }
+    $select = $db->prepare('SELECT * FROM scholarship_assignments WHERE id = ? FOR UPDATE');
+    $select->execute([$id]);
+    $row = $select->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        throw new DomainException('The renewal record could not be found.');
+    }
+    if ($row['status'] !== 'Pending') {
+        throw new DomainException('This renewal has already been decided. Refresh records to see its current status.');
+    }
+    $update = $db->prepare('UPDATE scholarship_assignments SET status = ?, updated_at = UTC_TIMESTAMP() WHERE id = ?');
+    $update->execute([$status, $id]);
+
+    if ($status === 'Approved') {
+        $history = $db->prepare("SELECT record_id, payload FROM records WHERE kind = 'discountHistory'
+            AND BINARY JSON_UNQUOTE(JSON_EXTRACT(payload, '$.id')) = ? FOR UPDATE");
+        $history->execute([$row['student_id']]);
+        $matchedRecordId = null;
+        $matchedPayload = null;
+        foreach ($history->fetchAll(PDO::FETCH_ASSOC) as $histRow) {
+            $payload = json_decode($histRow['payload'], true, 512, JSON_THROW_ON_ERROR);
+            $histYear = preg_replace('/^(\d{4})\s*[-–—]\s*(\d{4})$/u', '$1–$2', trim((string) ($payload['year'] ?? '')));
+            if ($histYear === $row['school_year'] && ($payload['semester'] ?? '') === $row['semester']) {
+                $matchedRecordId = $histRow['record_id'];
+                $matchedPayload = $payload;
+                break;
+            }
+        }
+        if ($matchedRecordId !== null) {
+            $scholarships = (array) ($matchedPayload['scholarships'] ?? []);
+            if (!in_array($row['scholarship'], $scholarships, true)) {
+                $scholarships[] = $row['scholarship'];
+                $matchedPayload['scholarships'] = $scholarships;
+                $saveHist = $db->prepare('UPDATE records SET payload = ? WHERE record_id = ?');
+                $saveHist->execute([json_encode($matchedPayload, JSON_THROW_ON_ERROR), $matchedRecordId]);
+            }
+        } else {
+            $insertHist = $db->prepare('INSERT INTO records (kind, student_id, payload) VALUES (?, ?, ?)');
+            insertRecord($insertHist, 'discountHistory', [
+                'id' => $row['student_id'],
+                'name' => $row['student_name'],
+                'year' => $row['school_year'],
+                'semester' => $row['semester'],
+                'scholarships' => [$row['scholarship']],
+            ]);
+        }
+    }
+
+    return [
+        'reference' => $row['student_id'],
+        'Scholarship' => $row['scholarship'],
+        'Term' => $row['school_year'] . ' · ' . $row['semester'],
+        'before' => ['Status' => 'Pending'],
+        'after' => ['Status' => $status],
+    ];
+}

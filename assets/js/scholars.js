@@ -199,3 +199,155 @@ function closeViewModal() {
     modal.classList.add("hidden");
     modal.classList.remove("flex");
 }
+
+function renewalSourceEntries() {
+    const byKey = new Map();
+    const scholarById = new Map(scholars.map(s => [s.id, s]));
+    for (const row of discountHistory) {
+        const scholar = scholarById.get(row.id);
+        const year = normalizeSchoolYear(row.year);
+        const semester = row.semester || "";
+        for (const scholarship of new Set(row.scholarships || [])) {
+            const key = `${row.id}\0${scholarship}\0${year}\0${semester}`;
+            if (!byKey.has(key)) {
+                byKey.set(key, {
+                    studentId: row.id,
+                    name: scholar?.name || row.name || row.id,
+                    course: scholar?.course || "",
+                    scholarship,
+                    year,
+                    semester,
+                });
+            }
+        }
+    }
+    for (const r of renewals) {
+        if (r.status !== "Approved") continue;
+        const key = `${r.student_id}\0${r.scholarship}\0${r.school_year}\0${r.semester}`;
+        if (!byKey.has(key)) {
+            byKey.set(key, {
+                studentId: r.student_id,
+                name: r.student_name,
+                course: r.course,
+                scholarship: r.scholarship,
+                year: r.school_year,
+                semester: r.semester,
+            });
+        }
+    }
+    return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name) || a.scholarship.localeCompare(b.scholarship));
+}
+
+function renderRenewalSources() {
+    const list = document.getElementById("renewalSourceList");
+    if (!list) return;
+    const entries = renewalSourceEntries();
+    const years = [...new Set(entries.map(e => e.year).filter(Boolean))].sort().reverse();
+    const year = updateSelectOptions("renewalSourceYear", "All school years", years);
+    const semester = document.getElementById("renewalSourceSemester")?.value || "";
+    const query = (document.getElementById("renewalSourceSearch")?.value || "").trim().toLowerCase();
+    const matches = entries.filter(e =>
+        (!year || e.year === year) &&
+        (!semester || e.semester === semester) &&
+        [e.name, e.studentId, e.scholarship, e.course].join(" ").toLowerCase().includes(query)
+    );
+    document.getElementById("renewalSelectAll").checked = false;
+    list.innerHTML = matches.length ? matches.map(e => {
+        const value = JSON.stringify({
+            studentId: e.studentId,
+            scholarship: e.scholarship,
+            sourceYear: e.year,
+            sourceSemester: e.semester,
+        });
+        return `<label class="flex cursor-pointer items-start gap-3 border-b px-3 py-2.5 text-xs last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800">
+            <input type="checkbox" name="renewalSourceItem" value="${escapeHtml(value)}" data-change="updateRenewalSelectionCount" class="mt-0.5 accent-dyci-blue">
+            <span class="min-w-0 flex-1">
+                <span class="block font-bold">${escapeHtml(e.name)} <span class="font-normal tabular-nums text-slate-500">(${escapeHtml(e.studentId)})</span></span>
+                <span class="mt-0.5 block text-slate-600 dark:text-slate-300">${escapeHtml(e.scholarship)} · ${escapeHtml([e.year, e.semester].filter(Boolean).join(" · ") || "—")}</span>
+            </span>
+        </label>`;
+    }).join("") : '<p class="p-4 text-center text-xs text-slate-500">No matching assignments found.</p>';
+    updateRenewalSelectionCount();
+}
+
+function toggleAllRenewalSources() {
+    const checked = Boolean(document.getElementById("renewalSelectAll")?.checked);
+    document.querySelectorAll('input[name="renewalSourceItem"]').forEach(box => { box.checked = checked; });
+    updateRenewalSelectionCount();
+}
+
+function updateRenewalSelectionCount() {
+    const count = document.querySelectorAll('input[name="renewalSourceItem"]:checked').length;
+    const label = document.getElementById("renewalSelectedCount");
+    if (label) label.textContent = `${count} selected`;
+}
+
+async function submitCarryOverRenewals(event) {
+    event.preventDefault();
+    const form = event.target;
+    const button = form.querySelector('[type="submit"]');
+    if (button.disabled) return;
+    const items = [...document.querySelectorAll('input[name="renewalSourceItem"]:checked')]
+        .map(box => JSON.parse(box.value));
+    if (!items.length) {
+        showToast("Select at least one assignment to carry over.");
+        return;
+    }
+    const f = new FormData(form);
+    const targetYear = (f.get("targetYear") || "").trim();
+    const targetSemester = (f.get("targetSemester") || "").trim();
+    button.disabled = true;
+    const label = button.textContent;
+    button.textContent = "Carrying over…";
+    try {
+        await requestRecords({action: "carry-over-renewals", targetYear, targetSemester, items});
+        document.getElementById("renewalSelectAll").checked = false;
+        showToast(`Carried over ${items.length} assignment${items.length === 1 ? "" : "s"} as Pending.`);
+    } catch (error) {
+        showToast(error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = label;
+    }
+}
+
+function renderRenewalQueue() {
+    const tbody = document.getElementById("renewalQueueRows");
+    if (!tbody) return;
+    const pendingTotal = renewals.filter(r => r.status === "Pending").length;
+    const badge = document.getElementById("renewalPendingBadge");
+    if (badge) badge.textContent = `${pendingTotal} pending`;
+
+    const years = [...new Set(renewals.map(r => r.school_year).filter(Boolean))].sort().reverse();
+    const year = updateSelectOptions("renewalQueueYear", "All years", years);
+    const semester = document.getElementById("renewalQueueSemester")?.value || "";
+    const status = document.getElementById("renewalQueueStatus")?.value ?? "Pending";
+    const query = (document.getElementById("renewalQueueSearch")?.value || "").trim().toLowerCase();
+
+    const matches = renewals.filter(r =>
+        (!year || r.school_year === year) &&
+        (!semester || r.semester === semester) &&
+        (!status || r.status === status) &&
+        [r.student_name, r.student_id, r.scholarship, r.school_year, r.semester].join(" ").toLowerCase().includes(query)
+    );
+    const page = tablePage("renewalPagination", matches, [year, semester, status, query], renderRenewalQueue);
+    tbody.innerHTML = page.length ? page.map(r => `<tr class="border-t dark:border-slate-800">
+        <td class="px-3 py-2.5"><b class="block">${escapeHtml(r.student_name)}</b><span class="tabular-nums text-xs text-slate-500">${escapeHtml(r.student_id)}</span></td>
+        <td class="px-3 py-2.5 font-semibold text-dyci-blue dark:text-blue-300">${escapeHtml(r.scholarship)}</td>
+        <td class="px-3 py-2.5 whitespace-nowrap"><span class="block tabular-nums">${escapeHtml(r.school_year)}</span><span class="text-xs text-slate-500">${escapeHtml(r.semester)}</span></td>
+        <td class="px-3 py-2.5">${scholarStatus(r.status)}</td>
+        <td class="px-3 py-2.5">${r.status === "Pending" ? `<div class="flex flex-wrap gap-2">
+            <button type="button" data-click="decideRenewal" data-renewal-id="${r.id}" data-status="Approved" class="rounded-lg bg-emerald-700 px-2.5 py-1 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60">Approve</button>
+            <button type="button" data-click="decideRenewal" data-renewal-id="${r.id}" data-status="Not Approved" class="rounded-lg border border-rose-300 px-2.5 py-1 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-60 dark:text-rose-300 dark:hover:bg-rose-950">Do not approve</button>
+        </div>` : `<span class="text-xs tabular-nums text-slate-500">${escapeHtml(formatPhilippineTime(r.updated))}</span>`}</td>
+    </tr>`).join("") : '<tr><td colspan="5" class="p-6 text-center text-slate-500">No renewal records match these filters.</td></tr>';
+}
+
+async function decideRenewal(id, status) {
+    try {
+        await requestRecords({action: "decide-renewal", id, status});
+        showToast(status === "Approved" ? "Renewal approved." : "Renewal marked not approved.");
+    } catch (error) {
+        showToast(error.message);
+    }
+}

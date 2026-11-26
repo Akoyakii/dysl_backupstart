@@ -61,19 +61,22 @@ function bindRecordControls() {
             toggleDataLock,
             toggleScholarshipDisabled: (_event, button) => toggleScholarshipDisabled(button.dataset.scholarshipName, button.dataset.disabled === "true"),
             deleteScholarship: (_event, button) => deleteScholarship(button.dataset.scholarshipName),
+            decideRenewal: (_event, button) => decideRenewal(Number(button.dataset.renewalId), button.dataset.status),
         },
         change: {
             renderAnalytics, renderActivity, renderScholars, renderScholarships, updateSelectedScholarships,
             renderScholarshipUsageDetails: () => renderScholarshipUsageDetails(),
-            restoreBackup: (_event, input) => restoreBackup(input)
+            restoreBackup: (_event, input) => restoreBackup(input),
+            renderRenewalSources, renderRenewalQueue, toggleAllRenewalSources, updateRenewalSelectionCount,
         },
         input: {
             renderActivity, renderScholars, renderScholarshipPicker, renderScholarships,
             renderScholarshipUsageRoster,
             renderScholarshipUsageDetails: () => renderScholarshipUsageDetails(),
-            formatStudentId: (_event, input) => formatStudentId(input)
+            formatStudentId: (_event, input) => formatStudentId(input),
+            renderRenewalSources, renderRenewalQueue,
         },
-        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet, submitNewSemester}
+        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet, submitNewSemester, submitCarryOverRenewals}
     };
     Object.entries(actions).forEach(([type, handlers]) => {
         document.addEventListener(type, event => {
@@ -376,6 +379,8 @@ function renderAll(){
     renderScholarships();
     renderActivity();
     renderReports();
+    renderRenewalSources();
+    renderRenewalQueue();
     document.getElementById("statScholars").textContent = scholars.length;
     document.getElementById("dashboardScholarshipCount").textContent = window.scholarshipCatalog?.length || 0;
     document.getElementById("dashboardDiscountCount").textContent = discountHistory.length;
@@ -388,6 +393,8 @@ function syncCustomSemesters() {
     const custom = (window._semesters || []).map(s => s.semester).filter(Boolean);
     const allTerms = [...new Set([...base, ...custom])];
     updateSelectOptions("scholarSemester", "All semesters", allTerms);
+    updateSelectOptions("renewalSourceSemester", "All semesters", allTerms);
+    updateSelectOptions("renewalQueueSemester", "All semesters", allTerms);
     const analyticsSem = document.getElementById("analyticsSemester");
     if (analyticsSem) {
         const current = analyticsSem.value;
@@ -400,6 +407,12 @@ function syncCustomSemesters() {
         modalSem.replaceChildren(new Option("Select semester", "", true, true), ...allTerms.map(t => new Option(t, t)));
         modalSem.options[0].disabled = true;
         if (allTerms.includes(current)) modalSem.value = current;
+    }
+    const targetSem = document.querySelector('#carryOverRenewalForm select[name="targetSemester"]');
+    if (targetSem) {
+        const current = targetSem.value;
+        targetSem.replaceChildren(...allTerms.map(t => new Option(t, t)));
+        if (allTerms.includes(current)) targetSem.value = current;
     }
 }
 

@@ -39,6 +39,8 @@ function renderActivity(){
         "scholarship.deleted": "Scholarship type deleted",
         "system.data_lock_changed": "Staff data entry lock updated",
         "system.semester_added": "Semester added",
+        "renewal.carried_over": "Semester renewals created",
+        "renewal.status_changed": "Renewal decision recorded",
         "account.signup_approved": "Signup request approved",
         "account.access_updated": "Account access updated",
         "account.temporary_password_issued": "Temporary password issued",

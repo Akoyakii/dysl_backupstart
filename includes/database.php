@@ -251,13 +251,16 @@ function validateScholarshipRules(array $names, array $catalog, array $existingH
     if ($hasFull && count($names) > 1) {
         throw new InvalidArgumentException('A student with a 100% full scholarship cannot receive an additional scholarship.');
     }
+    if ($external > 1) {
+        throw new InvalidArgumentException('A student may receive at most one external scholarship.');
+    }
     if ($athletic > 0) {
         if (count($names) > 2) {
             throw new InvalidArgumentException('Athletes may apply for up to two scholarships.');
         }
     } else {
-        if ($external > 1 || $inHouse > 1) {
-            throw new InvalidArgumentException('A student may receive at most one external scholarship and one in-house scholarship.');
+        if ($inHouse > 1) {
+            throw new InvalidArgumentException('A student may receive at most one in-house scholarship.');
         }
     }
     foreach (['TES', 'TDP'] as $grant) {
@@ -273,6 +276,25 @@ function validateScholarshipRules(array $names, array $catalog, array $existingH
         if (count($years) > $maxResidency) {
             throw new InvalidArgumentException("$grant has a maximum residency of $maxResidency years.");
         }
+    }
+}
+
+function scholarshipRequiresApproval(array $names, array $catalog): bool
+{
+    $byName = array_column($catalog, null, 0);
+    foreach ($names as $name) {
+        if (($byName[$name][1] ?? null) === 'External and Government Grants') return true;
+    }
+    return false;
+}
+
+function validateScholarshipStatus(array $names, string $status, array $catalog): void
+{
+    if (!in_array($status, ['Approved', 'Pending', 'Not Approved'], true)) {
+        throw new InvalidArgumentException('Choose a valid scholarship status.');
+    }
+    if (!scholarshipRequiresApproval($names, $catalog) && $status !== 'Approved') {
+        throw new InvalidArgumentException('Only external scholarships can be Pending or Not Approved. In-house scholarships are Approved by default.');
     }
 }
 
@@ -333,6 +355,9 @@ function decidePendingScholar(PDO $db, array $request): array
     $scholar = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
     if ($scholar['status'] !== 'Pending') {
         throw new DomainException('This record has already been decided. Refresh records to see its current status.');
+    }
+    if (!scholarshipRequiresApproval((array) ($scholar['scholarship'] ?? []), scholarshipCatalog($db))) {
+        throw new DomainException('In-house scholarships do not require approval.');
     }
     $scholar['status'] = $status;
     $scholar['updated'] = gmdate('Y-m-d H:i') . ' UTC';
@@ -473,6 +498,7 @@ function editScholarAssignments(PDO $db, array $request): ?array
     $existingHistory = array_map(static fn($p) => json_decode($p, true, 512, JSON_THROW_ON_ERROR), $historyStmt->fetchAll(PDO::FETCH_COLUMN));
     $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
     validateScholarshipRules($names, $catalog, $existingHistory, $scholar['period'] ?? '', $maxResidency);
+    validateScholarshipStatus($names, $validated['status'], $catalog);
 
     $assignmentsChanged = (bool) (array_diff($names, $originalNames) || array_diff($originalNames, $names));
     $identityChanged = $updated['id'] !== $id || $updated['name'] !== $scholar['name'];
@@ -559,6 +585,7 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
     }
     $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
     validateScholarshipRules($names, $catalog, [], $period, $maxResidency);
+    validateScholarshipStatus($names, $scholar['status'], $catalog);
     $historyEntry = [
         'id' => $scholar['id'], 'name' => $scholar['name'], 'year' => $period,
         'semester' => $scholar['semester'] ?? '1st Semester', 'scholarships' => $names,
@@ -609,11 +636,12 @@ function carryOverRenewals(PDO $db, array $request): array
         throw new InvalidArgumentException('Select between 1 and 500 assignments to carry over.');
     }
 
-    $knownCatalog = array_flip(array_column(scholarshipCatalog($db), 0));
+    $catalog = scholarshipCatalog($db);
+    $knownCatalog = array_flip(array_column($catalog, 0));
     $findScholar = $db->prepare("SELECT payload FROM records WHERE kind = 'scholars' AND student_id = ?");
     $insert = $db->prepare('INSERT IGNORE INTO scholarship_assignments
         (student_id, student_name, course, scholarship, school_year, semester, status, source_year, source_semester, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, "Pending", ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())');
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())');
 
     $created = 0;
     $skipped = 0;
@@ -638,6 +666,7 @@ function carryOverRenewals(PDO $db, array $request): array
         if (!in_array($scholarship, $allowedForStudent, true)) {
             throw new InvalidArgumentException("Scholarship $scholarship is not valid.");
         }
+        $renewalStatus = scholarshipRequiresApproval([$scholarship], $catalog) ? 'Pending' : 'Approved';
         $insert->execute([
             $scholar['id'],
             $scholar['name'],
@@ -645,6 +674,7 @@ function carryOverRenewals(PDO $db, array $request): array
             $scholarship,
             $targetYear,
             $targetSemester,
+            $renewalStatus,
             $sourceYear !== '' ? $sourceYear : null,
             $sourceSemester !== '' ? $sourceSemester : null,
         ]);
@@ -680,6 +710,9 @@ function decideRenewal(PDO $db, array $request): array
     }
     if ($row['status'] !== 'Pending') {
         throw new DomainException('This renewal has already been decided. Refresh records to see its current status.');
+    }
+    if (!scholarshipRequiresApproval([(string) $row['scholarship']], scholarshipCatalog($db))) {
+        throw new DomainException('In-house scholarship renewals do not require approval.');
     }
     $update = $db->prepare('UPDATE scholarship_assignments SET status = ?, updated_at = UTC_TIMESTAMP() WHERE id = ?');
     $update->execute([$status, $id]);

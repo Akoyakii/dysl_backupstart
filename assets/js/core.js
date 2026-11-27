@@ -444,7 +444,10 @@ function syncCustomSemesters() {
         const current = modalSem.value;
         modalSem.replaceChildren(new Option("Select semester", "", true, true), ...allTerms.map(t => new Option(t, t)));
         modalSem.options[0].disabled = true;
-        modalSem.value = window._systemSettings?.activeSemester || (allTerms.includes(current) ? current : "");
+        const activeSemester = window._systemSettings?.activeSemester || (allTerms.includes(current) ? current : "");
+        modalSem.value = activeSemester;
+        const modalSemesterHidden = document.querySelector('#scholarForm input[type="hidden"][name="semester"]');
+        if (modalSemesterHidden) modalSemesterHidden.value = activeSemester;
     }
     const targetSem = document.querySelector('#carryOverRenewalForm select[name="targetSemester"]');
     if (targetSem) {

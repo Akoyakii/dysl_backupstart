@@ -228,7 +228,7 @@ function renderScholarshipPicker(initialSelection){
     const selectedAthletic = [...selected].some(name => ["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(catalog.find(item => item[0] === name)?.[1]));
     const categoryFor = item => item[1] === "External and Government Grants" ? "external" : (["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(item[1]) ? "athletic" : "internal");
     const visibleOptions = Object.entries(groups).map(([category, items]) => `
-        <details class="border-b last:border-b-0 dark:border-slate-700" open>
+        <details class="border-b last:border-b-0 dark:border-slate-700">
             <summary class="cursor-pointer list-none bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:bg-slate-800">${escapeHtml(category)} <span class="float-right text-xs">⌄</span></summary>
             ${items.map(s => `
                 <label class="scholarship-option flex cursor-pointer items-start gap-3 px-4 py-3">

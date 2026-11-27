@@ -220,12 +220,18 @@ function renderScholarshipPicker(initialSelection){
         }
     });
     
+    const selectedExternal = [...selected].some(name => groups && (catalog.find(item => item[0] === name)?.[1] === "External and Government Grants"));
+    const selectedInternal = [...selected].some(name => {
+        const category = catalog.find(item => item[0] === name)?.[1];
+        return category && category !== "External and Government Grants" && !["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
+    });
+    const categoryFor = item => item[1] === "External and Government Grants" ? "external" : (["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(item[1]) ? "athletic" : "internal");
     const visibleOptions = Object.entries(groups).map(([category, items]) => `
-        <div class="border-b last:border-b-0 dark:border-slate-700">
-            <div class="sticky top-0 bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:bg-slate-800">${escapeHtml(category)}</div>
+        <details class="border-b last:border-b-0 dark:border-slate-700" open>
+            <summary class="cursor-pointer list-none bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:bg-slate-800">${escapeHtml(category)} <span class="float-right text-xs">⌄</span></summary>
             ${items.map(s => `
                 <label class="scholarship-option flex cursor-pointer items-start gap-3 px-4 py-3">
-                    <input type="checkbox" name="scholarship[]" value="${escapeHtml(s[0])}" ${selected.has(s[0]) ? "checked" : ""} data-change="updateSelectedScholarships">
+                    <input type="checkbox" name="scholarship[]" value="${escapeHtml(s[0])}" ${selected.has(s[0]) ? "checked" : ""} ${(!selected.has(s[0]) && ((categoryFor(s) === "external" && selectedExternal) || (categoryFor(s) === "internal" && selectedInternal) || (selectedExternal && selectedInternal))) ? "disabled" : ""} data-change="updateSelectedScholarships">
                     <span class="min-w-0 flex-1">
                         <span class="block text-sm font-bold">${escapeHtml(s[0])}</span>
                         <span class="mt-0.5 block text-xs text-slate-500">${escapeHtml(s[2])}</span>
@@ -233,7 +239,7 @@ function renderScholarshipPicker(initialSelection){
                     <span class="shrink-0 rounded-full bg-dyci-blue/10 px-2 py-1 text-[10px] font-black text-dyci-blue dark:bg-dyci-blue/30 dark:text-blue-300">${escapeHtml(s[4])}</span>
                 </label>
             `).join("")}
-        </div>
+        </details>
     `).join("") || `<div class="p-8 text-center text-sm text-slate-500">No scholarships match your search.</div>`;
     box.innerHTML = visibleOptions + [...hiddenSelections].map(name => `
         <input type="checkbox" name="scholarship[]" value="${escapeHtml(name)}" checked hidden>
@@ -274,6 +280,19 @@ function updateSelectedScholarships(){
             }
         }
     }
+    const byName = new Map((window.scholarshipCatalog || []).map(item => [item[0], item]));
+    const hasExternal = selected.some(name => byName.get(name)?.[1] === "External and Government Grants");
+    const hasInternal = selected.some(name => {
+        const category = byName.get(name)?.[1];
+        return category && category !== "External and Government Grants" && !["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
+    });
+    document.querySelectorAll('input[name="scholarship[]"]').forEach(input => {
+        if (input.checked) return;
+        const category = byName.get(input.value)?.[1];
+        const external = category === "External and Government Grants";
+        const internal = category && !external && !["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
+        input.disabled = (external && hasExternal) || (internal && hasInternal) || (hasExternal && hasInternal);
+    });
 }
 
 async function toggleScholarshipDisabled(name, disabled) {

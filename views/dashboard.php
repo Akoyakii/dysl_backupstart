@@ -52,4 +52,11 @@
             </div>
             <div id="recentTable" aria-live="polite"></div>
         </div>
+        <dialog id="dashboardChartDialog" class="w-[min(94vw,58rem)] rounded-2xl border border-slate-200 bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-slate-950/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5 dark:border-slate-700">
+                <div><h2 id="dashboardChartDialogTitle" class="text-xl font-bold"></h2><p id="dashboardChartDialogSummary" class="mt-1 text-sm text-slate-500 dark:text-slate-300"></p></div>
+                <button type="button" data-click="closeDashboardChartDetails" class="rounded-lg border px-3 py-1.5 text-sm font-semibold">Close</button>
+            </div>
+            <div id="dashboardChartDialogBody" class="max-h-[65vh] overflow-auto p-5"></div>
+        </dialog>
     </section>

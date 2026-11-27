@@ -57,6 +57,7 @@ function bindRecordControls() {
             exportScholarshipUsage,
             openViewModal: (_event, button) => openViewModal(button.dataset.studentId),
             dashboardCardNav: (_event, button) => dashboardCardNav(button.dataset.target, button.dataset.filter),
+            closeDashboardChartDetails: () => document.getElementById("dashboardChartDialog")?.close(),
             setScholarshipView: (_event, button) => setScholarshipView(button.dataset.mode),
             toggleDataLock,
             toggleScholarshipDisabled: (_event, button) => toggleScholarshipDisabled(button.dataset.scholarshipName, button.dataset.disabled === "true"),

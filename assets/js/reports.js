@@ -1,6 +1,7 @@
 let scholarshipBarChart = null, scholarshipLineChart = null, departmentTrendChart = null;
 let dashboardStatusChart = null, dashboardUsageChart = null;
 let dashboardDeptChart = null, dashboardCoverageChart = null;
+let dashboardChartDetails = {};
 
 const SCHOLARSHIP_CODE_DESCRIPTIONS = {
     "DISSF": "Discounted In-house Student Scholarship Fund",
@@ -66,6 +67,13 @@ function renderDashboardMetrics() {
 
     if (!document.getElementById("dashboard").classList.contains("active")) return;
 
+    dashboardChartDetails = {
+        status: Object.fromEntries(statuses.map(status => [status, scholars.filter(s => s.status === status)])),
+        usage: Object.fromEntries(usage.map(([name]) => [name, discountHistory.filter(row => (row.scholarships || []).includes(name))])),
+        department: Object.fromEntries(deptEntries.map(([name]) => [name, scholars.filter(s => ((s.course || "").replace(/\s*[Â·â€¢â€“â€”—-]\s*\d+(?:st|nd|rd|th)\s+Year$/i, "").trim() || "Unknown") === name)])),
+        coverage: Object.fromEntries(coverageEntries.map(([name]) => [name, discountHistory.filter(row => (row.scholarships || []).some(scholarship => (catalog.get(scholarship) || "Other") === name))]))
+    };
+
     dashboardStatusChart?.destroy();
     dashboardUsageChart?.destroy();
     dashboardDeptChart?.destroy();
@@ -82,7 +90,12 @@ function renderDashboardMetrics() {
     const dark = document.documentElement.classList.contains("dark");
     const ticks = dark ? "#e7e7ea" : "#475569";
     const grid = dark ? "#39393f" : "#e2e8f0";
-    const options = {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}};
+    const options = {responsive: true, maintainAspectRatio: false, onClick: (_event, elements, chart) => {
+        if (!elements.length) return;
+        const label = chart.data.labels[elements[0].index];
+        const type = chart.canvas.id.replace("dashboard", "").replace("Chart", "").toLowerCase();
+        openDashboardChartDetails(type === "dept" ? "department" : type, label);
+    }, plugins: {legend: {display: false}}};
     const barOptions = (indexAxis = "y") => ({...options, indexAxis, scales: indexAxis === "x" ? {
         x: {grid: {display: false}, ticks: {color: ticks, autoSkip: false, maxRotation: 45, minRotation: 0, callback(value) {
             const name = this.getLabelForValue(value);
@@ -140,6 +153,17 @@ function renderDashboardMetrics() {
                 labels: {color: ticks, boxWidth: 12, padding: 8, font: {size: 11}}}}}
         });
     }
+}
+
+function openDashboardChartDetails(type, label) {
+    const rows = dashboardChartDetails[type]?.[label] || [];
+    const dialog = document.getElementById("dashboardChartDialog");
+    if (!dialog) return;
+    document.getElementById("dashboardChartDialogTitle").textContent = label;
+    document.getElementById("dashboardChartDialogSummary").textContent = `${rows.length} matching record${rows.length === 1 ? "" : "s"}`;
+    const body = document.getElementById("dashboardChartDialogBody");
+    body.innerHTML = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b text-xs uppercase tracking-wide text-slate-500"><th class="px-3 py-2">Student</th><th class="px-3 py-2">Student ID</th><th class="px-3 py-2">Course / year</th><th class="px-3 py-2">School year</th><th class="px-3 py-2">Semester</th></tr></thead><tbody>${rows.map(row => `<tr class="border-b border-slate-100 dark:border-slate-800"><td class="px-3 py-2 font-semibold">${escapeHtml(row.name || row.student_name || "—")}</td><td class="px-3 py-2">${escapeHtml(row.id || row.student_id || "—")}</td><td class="px-3 py-2">${escapeHtml(row.course || "—")}</td><td class="px-3 py-2">${escapeHtml(row.year || row.school_year || "—")}</td><td class="px-3 py-2">${escapeHtml(row.semester || "—")}</td></tr>`).join("")}</tbody></table></div>` : `<p class="py-8 text-center text-sm text-slate-500">No matching details found.</p>`;
+    dialog.showModal();
 }
 
 function populateAnalyticsFilters(){

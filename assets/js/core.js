@@ -146,11 +146,12 @@ function formatStudentId(input) {
     const beforeCaret = input.value.slice(0, input.selectionStart).replace(/[^0-9]/g, "").length;
     const digits = input.value.replace(/[^0-9]/g, "").slice(0, 9);
     const formatted = digits.length > 4 ? digits.slice(0, 4) + "-" + digits.slice(4) : digits;
-    if (formatted === input.value) { checkStudentIdDuplicate(input); return; }
+    if (formatted === input.value) { checkStudentIdDuplicate(input); updateYearLevelFromStudentId(input.value); return; }
     input.value = formatted;
     const caret = Math.min(formatted.length, beforeCaret + (beforeCaret > 4 ? 1 : 0));
     input.setSelectionRange(caret, caret);
     checkStudentIdDuplicate(input);
+    updateYearLevelFromStudentId(input.value);
 }
 
 function checkStudentIdDuplicate(input) {
@@ -162,6 +163,16 @@ function checkStudentIdDuplicate(input) {
     warning.textContent = match ? `Student ID ${value} is already used by ${match.name}.` : "";
     warning.classList.toggle("hidden", !match);
     input.setCustomValidity(match ? "This student ID is already in use." : "");
+}
+
+function updateYearLevelFromStudentId(value) {
+    const yearSelect = document.querySelector('#scholarForm select[name="year"]');
+    const period = document.querySelector('#scholarForm input[name="period"]')?.value || "";
+    const match = /^(\d{4})-\d{5}$/.exec(value.trim());
+    const currentYear = Number((/^(\d{4})/.exec(period) || [])[1]);
+    if (!yearSelect || !match || !currentYear) return;
+    const level = currentYear - Number(match[1]) + 1;
+    if (level >= 1 && level <= 4) yearSelect.value = `${level}${level === 1 ? "st" : level === 2 ? "nd" : level === 3 ? "rd" : "th"} Year`;
 }
 
 async function submitScholar(e) {

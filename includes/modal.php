@@ -66,13 +66,15 @@
         <input name="period" value="<?= htmlspecialchars(currentSchoolYear($db), ENT_QUOTES, 'UTF-8') ?>" readonly class="mt-2 w-full rounded-xl border bg-slate-100 px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-800">
     </label>
     <label class="block text-sm font-bold">Semester *
+        <?php $activeSemester = readSystemSettings($db)['activeSemester'] ?? '1st Semester'; ?>
         <select name="semester" disabled aria-readonly="true" class="mt-2 w-full rounded-xl border bg-slate-100 px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-800">
-            <option value="" disabled selected>Select semester</option>
+            <option value="" disabled>Select semester</option>
+            <?php if (!in_array($activeSemester, SCHOLAR_SEMESTERS, true)): ?><option selected><?= htmlspecialchars($activeSemester, ENT_QUOTES, 'UTF-8') ?></option><?php endif; ?>
             <?php foreach (SCHOLAR_SEMESTERS as $semester): ?>
-                <option><?= $semester ?></option>
+                <option <?= $semester === $activeSemester ? 'selected' : '' ?>><?= htmlspecialchars($semester, ENT_QUOTES, 'UTF-8') ?></option>
             <?php endforeach; ?>
         </select>
-        <input type="hidden" name="semester" value="">
+        <input type="hidden" name="semester" value="<?= htmlspecialchars($activeSemester, ENT_QUOTES, 'UTF-8') ?>">
     </label>
 </div></fieldset>
 <fieldset id="scholarEditIdentity" hidden disabled class="min-w-0 rounded-2xl border bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-800/40">

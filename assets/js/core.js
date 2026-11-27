@@ -403,7 +403,7 @@ function renderAcademicLists() {
     render("programList", academicLists.programs || [], "program", "programs");
     const course = document.querySelector('#scholarForm select[name="course"]');
     const program = document.querySelector('#scholarForm select[name="program"]');
-    if (course && academicLists.departments?.length) { const current = course.value; course.replaceChildren(new Option("Select College", ""), ...academicLists.departments.filter(x => !x.disabled).map(x => new Option(x.name, x.name))); course.value = current; }
+    if (course && academicLists.programs?.length) { const current = course.value; course.replaceChildren(new Option("Select Program", ""), ...academicLists.programs.filter(x => !x.disabled).map(x => new Option(`${x.code} — ${x.name}`, x.code))); course.value = current; }
     if (program && academicLists.programs?.length) { const current = program.value; program.replaceChildren(new Option("Select Program (Optional)", ""), ...academicLists.programs.filter(x => !x.disabled).map(x => new Option(`${x.code} — ${x.name}`, x.code))); program.value = current; }
 }
 

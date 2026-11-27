@@ -632,6 +632,15 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
         throw new InvalidArgumentException('Enter a student ID in the format 2026-00125.');
     }
     $updated = gmdate('Y-m-d H:i') . ' UTC';
+    if ($db) {
+        $duplicate = $db->prepare("SELECT payload FROM records WHERE kind = 'scholars' AND student_id = ? LIMIT 1");
+        $duplicate->execute([$scholar['id']]);
+        $existingPayload = $duplicate->fetchColumn();
+        if ($existingPayload !== false) {
+            $existing = json_decode($existingPayload, true, 512, JSON_THROW_ON_ERROR);
+            throw new DomainException('Student ID ' . $scholar['id'] . ' is already used by ' . ($existing['name'] ?? 'another student') . '.');
+        }
+    }
     $scholar['updated'] = $updated;
     $period = currentSchoolYear($db);
     $scholar['period'] = $period;

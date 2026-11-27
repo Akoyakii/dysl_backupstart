@@ -226,13 +226,14 @@ function renderScholarshipPicker(initialSelection){
         return category && category !== "External and Government Grants" && !["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
     });
     const selectedAthletic = [...selected].some(name => ["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(catalog.find(item => item[0] === name)?.[1]));
+    const selectedFull = [...selected].some(name => catalog.find(item => item[0] === name)?.[4] === "100%");
     const categoryFor = item => item[1] === "External and Government Grants" ? "external" : (["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(item[1]) ? "athletic" : "internal");
     const visibleOptions = Object.entries(groups).map(([category, items]) => `
         <details class="border-b last:border-b-0 dark:border-slate-700">
             <summary class="cursor-pointer list-none bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:bg-slate-800">${escapeHtml(category)} <span class="float-right text-xs">⌄</span></summary>
             ${items.map(s => `
                 <label class="scholarship-option flex cursor-pointer items-start gap-3 px-4 py-3">
-                    <input type="checkbox" name="scholarship[]" value="${escapeHtml(s[0])}" ${selected.has(s[0]) ? "checked" : ""} ${(!selected.has(s[0]) && ((categoryFor(s) === "external" && selectedExternal) || (categoryFor(s) === "internal" && selectedInternal) || (categoryFor(s) === "athletic" && selectedAthletic) || (selectedExternal && selectedInternal))) ? "disabled" : ""} data-change="updateSelectedScholarships">
+                    <input type="checkbox" name="scholarship[]" value="${escapeHtml(s[0])}" ${selected.has(s[0]) ? "checked" : ""} ${(!selected.has(s[0]) && ((categoryFor(s) === "external" && selectedExternal) || (categoryFor(s) === "internal" && selectedInternal) || (categoryFor(s) === "athletic" && selectedAthletic) || (categoryFor(s) === "athletic" && selectedFull) || (selectedExternal && selectedInternal))) ? "disabled" : ""} data-change="updateSelectedScholarships">
                     <span class="min-w-0 flex-1">
                         <span class="block text-sm font-bold">${escapeHtml(s[0])}</span>
                         <span class="mt-0.5 block text-xs text-slate-500">${escapeHtml(s[2])}</span>
@@ -288,13 +289,14 @@ function updateSelectedScholarships(){
         return category && category !== "External and Government Grants" && !["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
     });
     const hasAthletic = selected.some(name => ["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(byName.get(name)?.[1]));
+    const hasFull = selected.some(name => byName.get(name)?.[4] === "100%");
     document.querySelectorAll('input[name="scholarship[]"]').forEach(input => {
         if (input.checked) return;
         const category = byName.get(input.value)?.[1];
         const external = category === "External and Government Grants";
         const internal = category && !external && !["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
         const athletic = ["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
-        input.disabled = (external && hasExternal) || (internal && hasInternal) || (athletic && hasAthletic) || (hasExternal && hasInternal);
+        input.disabled = (external && hasExternal) || (internal && hasInternal) || (athletic && hasAthletic) || (athletic && hasFull) || (hasExternal && hasInternal);
     });
 }
 

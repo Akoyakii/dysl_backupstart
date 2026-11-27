@@ -298,12 +298,6 @@ function updateSelectedScholarships(){
         const athletic = ["DISTRICT", "PROVINCIAL", "INTERNATIONAL"].includes(category);
         input.disabled = (external && hasExternal) || (internal && hasInternal) || (athletic && hasAthletic) || (athletic && hasFull) || (hasExternal && hasInternal);
     });
-    const currentStatus = form?.elements.namedItem("status")?.value;
-    const hasTesOrTdp = selected.some(name => name === "TES" || name === "TDP");
-    if (waivedInput && (!hasTesOrTdp || currentStatus !== "Approved")) {
-        waivedInput.value = "";
-        waivedInput.closest("label")?.classList.add("hidden");
-    }
 }
 
 async function toggleScholarshipDisabled(name, disabled) {

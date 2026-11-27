@@ -387,6 +387,14 @@ function openModal(id){
     renderScholarshipPicker(student ? scholarshipNames(student) : []);
     syncCustomSemesters();
     syncSystemSettings();
+    const semesterSelect = form.querySelector('select[name="semester"]');
+    const semesterHidden = form.querySelector('input[type="hidden"][name="semester"]');
+    const configuredSemester = window._systemSettings?.activeSemester || semesterHidden?.value || "";
+    if (semesterSelect && configuredSemester) {
+        if (![...semesterSelect.options].some(option => option.value === configuredSemester)) semesterSelect.add(new Option(configuredSemester, configuredSemester));
+        semesterSelect.value = configuredSemester;
+        if (semesterHidden) semesterHidden.value = configuredSemester;
+    }
     modal.classList.add("open");
     document.getElementById("scholarFormScroll").scrollTop = 0;
 }

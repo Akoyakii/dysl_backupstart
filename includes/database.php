@@ -254,14 +254,11 @@ function validateScholarshipRules(array $names, array $catalog, array $existingH
     if ($external > 1) {
         throw new InvalidArgumentException('A student may receive at most one external scholarship.');
     }
-    if ($athletic > 0) {
-        if (count($names) > 2) {
-            throw new InvalidArgumentException('Athletes may apply for up to two scholarships.');
-        }
-    } else {
-        if ($inHouse > 1) {
-            throw new InvalidArgumentException('A student may receive at most one in-house scholarship.');
-        }
+    if ($athletic > 1) {
+        throw new InvalidArgumentException('A student may receive at most one athletic scholarship.');
+    }
+    if ($inHouse > 1) {
+        throw new InvalidArgumentException('A student may receive at most one in-house scholarship.');
     }
     foreach (['TES', 'TDP'] as $grant) {
         if (!in_array($grant, $names, true)) continue;

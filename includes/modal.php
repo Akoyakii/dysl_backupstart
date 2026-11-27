@@ -31,7 +31,7 @@
             <option value="School of Psychology">School of Psychology</option>
         </select>
     </label>
-    <label class="block text-sm font-bold">College / Department · Program / Course
+    <label class="block text-sm font-bold"><span class="sr-only">Program / Course</span>
         <select name="program" class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-900">
             <option value="">Select Program (Optional)</option>
             <option value="BSIT">BSIT — BS Information Technology</option>

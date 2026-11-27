@@ -122,7 +122,6 @@ function openViewModal(id) {
     document.getElementById("viewUpdated").textContent = formatPhilippineTime(student.updated);
     const studentHistory = discountHistory.filter(record => record.id === student.id);
     const {year, semester} = scholarPeriod(student, studentHistory);
-    document.getElementById("viewPeriod").value = year || "";
     renderViewTermTabs(student, studentHistory);
 
     const statusEl = document.getElementById("viewStatus");
@@ -186,7 +185,8 @@ function renderViewTermTabs(student, history, activeYear = null, activeTerm = nu
     const selectedYear = activeYear && years.includes(activeYear) ? activeYear : (years[0] || student.period || "—");
     const terms = [...new Set(history.filter(row => row.year === selectedYear).map(row => row.semester).filter(Boolean))];
     const selectedTerm = activeTerm && terms.includes(activeTerm) ? activeTerm : (terms[0] || "—");
-    yearBox.replaceChildren(...years.map(year => new Option(year, year)));
+    const availableYears = years.length ? years : (student.period ? [student.period] : []);
+    yearBox.replaceChildren(...availableYears.map(year => new Option(year, year)));
     yearBox.value = selectedYear;
     yearBox.onchange = () => renderViewTermTabs(student, history, yearBox.value, null);
     const order = {"1st Semester": 1, "2nd Semester": 2, "Summer": 3};

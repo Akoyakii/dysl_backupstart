@@ -385,6 +385,7 @@ function openModal(id){
     document.getElementById("studentScholarshipSearch").value = "";
     document.getElementById("studentScholarshipPicker").replaceChildren();
     renderScholarshipPicker(student ? scholarshipNames(student) : []);
+    syncCustomSemesters();
     syncSystemSettings();
     modal.classList.add("open");
     document.getElementById("scholarFormScroll").scrollTop = 0;
@@ -475,7 +476,8 @@ function syncCustomSemesters() {
         const current = modalSem.value;
         modalSem.replaceChildren(new Option("Select semester", "", true, true), ...allTerms.map(t => new Option(t, t)));
         modalSem.options[0].disabled = true;
-        const activeSemester = window._systemSettings?.activeSemester || (allTerms.includes(current) ? current : "");
+        const configuredSemester = document.querySelector('#scholarForm input[type="hidden"][name="semester"]')?.value || "";
+        const activeSemester = window._systemSettings?.activeSemester || configuredSemester || (allTerms.includes(current) ? current : "");
         modalSem.value = activeSemester;
         const modalSemesterHidden = document.querySelector('#scholarForm input[type="hidden"][name="semester"]');
         if (modalSemesterHidden) modalSemesterHidden.value = activeSemester;
@@ -497,6 +499,10 @@ function syncCustomSemesters() {
 function syncSystemSettings() {
     const settings = window._systemSettings;
     if (!settings) return;
+    const modalSemester = document.querySelector('#scholarForm select[name="semester"]');
+    if (modalSemester && settings.activeSemester) modalSemester.value = settings.activeSemester;
+    const modalSemesterHidden = document.querySelector('#scholarForm input[type="hidden"][name="semester"]');
+    if (modalSemesterHidden && settings.activeSemester) modalSemesterHidden.value = settings.activeSemester;
     const subtitle = document.getElementById("workspaceSubtitleText");
     if (subtitle && settings.workspaceSubtitle) {
         subtitle.textContent = settings.workspaceSubtitle;

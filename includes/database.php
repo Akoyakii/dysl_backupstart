@@ -414,7 +414,7 @@ function academicLists(PDO $db): array
 {
     try {
         $departments = $db->query('SELECT id, name, disabled FROM college_departments ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
-        $programs = $db->query('SELECT id, code, name, disabled FROM academic_programs ORDER BY code')->fetchAll(PDO::FETCH_ASSOC);
+        $programs = $db->query('SELECT id, code, name, department_id, disabled FROM academic_programs ORDER BY code')->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $error) {
         if ((int) ($error->errorInfo[1] ?? 0) === 1146) return ['departments' => [], 'programs' => []];
         throw $error;

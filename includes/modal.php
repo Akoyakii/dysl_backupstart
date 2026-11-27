@@ -17,8 +17,8 @@
         <p id="studentIdDuplicateWarning" class="mt-2 hidden text-xs font-semibold text-rose-700 dark:text-rose-300" role="alert"></p>
     </label>
 
-    <label class="block text-sm font-bold md:col-span-2">Program / Course *
-        <select name="course" required class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-900">
+    <label class="block text-sm font-bold md:col-span-2">College / Department *
+        <select name="course" data-change="updateProgramOptions" required class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-900">
             <option value="" disabled selected>Select College</option>
             <option value="College of Accountancy">College of Accountancy</option>
             <option value="College of Art and Sciences">College of Art and Sciences</option>
@@ -32,7 +32,7 @@
             <option value="School of Psychology">School of Psychology</option>
         </select>
     </label>
-    <label class="hidden block text-sm font-bold"><span class="sr-only">College / Department</span>
+    <label class="block text-sm font-bold"><span>Program / Course</span>
         <select name="program" class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal dark:border-slate-700 dark:bg-slate-900">
             <option value="">Select Program (Optional)</option>
             <option value="BSIT">BSIT — BS Information Technology</option>

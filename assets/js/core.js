@@ -70,6 +70,7 @@ function bindRecordControls() {
         change: {
             renderAnalytics, renderActivity, renderScholars, renderScholarships, updateSelectedScholarships,
             renderScholarshipUsageDetails: () => renderScholarshipUsageDetails(),
+            updateProgramOptions,
             restoreBackup: (_event, input) => restoreBackup(input),
             renderRenewalSources, renderRenewalQueue, toggleAllRenewalSources, updateRenewalSelectionCount,
         },
@@ -419,8 +420,21 @@ function renderAcademicLists() {
     render("programList", academicLists.programs || [], "program", "programs");
     const course = document.querySelector('#scholarForm select[name="course"]');
     const program = document.querySelector('#scholarForm select[name="program"]');
-    if (course && academicLists.programs?.length) { const current = course.value; course.replaceChildren(new Option("Select Program", ""), ...academicLists.programs.filter(x => !x.disabled).map(x => new Option(`${x.code} — ${x.name}`, x.code))); course.value = current; }
-    if (program && academicLists.programs?.length) { const current = program.value; program.replaceChildren(new Option("Select Program (Optional)", ""), ...academicLists.programs.filter(x => !x.disabled).map(x => new Option(`${x.code} — ${x.name}`, x.code))); program.value = current; }
+    if (course && academicLists.departments?.length) { const current = course.value; course.replaceChildren(new Option("Select College", ""), ...academicLists.departments.filter(x => !x.disabled).map(x => new Option(x.name, x.name))); course.value = current; }
+    updateProgramOptions();
+}
+
+function updateProgramOptions() {
+    const course = document.querySelector('#scholarForm select[name="course"]');
+    const program = document.querySelector('#scholarForm select[name="program"]');
+    if (!program) return;
+    const selectedDepartment = course?.value || "";
+    const department = (academicLists.departments || []).find(item => item.name === selectedDepartment);
+    const current = program.value;
+    const options = (academicLists.programs || []).filter(item => !item.disabled && (!department || Number(item.department_id) === Number(department.id)));
+    program.replaceChildren(new Option("Select Program / Course", ""), ...options.map(item => new Option(`${item.code} — ${item.name}`, item.code)));
+    program.value = options.some(item => item.code === current) ? current : "";
+    program.disabled = !selectedDepartment;
 }
 
 async function submitAcademicItem(event) {

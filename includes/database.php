@@ -288,13 +288,18 @@ function scholarshipRequiresApproval(array $names, array $catalog): bool
     return false;
 }
 
+function hasTesOrTdp(array $names): bool
+{
+    return (bool) array_intersect(['TES', 'TDP'], $names);
+}
+
 function validateScholarshipStatus(array $names, string $status, array $catalog): void
 {
-    if (!in_array($status, ['Approved', 'Pending', 'Not Approved'], true)) {
+    if (!in_array($status, ['Approved', 'Pending'], true)) {
         throw new InvalidArgumentException('Choose a valid scholarship status.');
     }
     if (!scholarshipRequiresApproval($names, $catalog) && $status !== 'Approved') {
-        throw new InvalidArgumentException('Only external scholarships can be Pending or Not Approved. In-house scholarships are Approved by default.');
+        throw new InvalidArgumentException('Only external scholarships can be Pending. In-house scholarships are Approved by default.');
     }
 }
 
@@ -343,7 +348,7 @@ function decidePendingScholar(PDO $db, array $request): array
     $id = $request['id'] ?? null;
     $status = $request['status'] ?? null;
     if (!is_string($id) || trim($id) === '' || strlen($id) > 255 ||
-        !in_array($status, ['Approved', 'Not Approved'], true)) {
+        !in_array($status, ['Approved'], true)) {
         throw new InvalidArgumentException('Choose a student and a valid decision.');
     }
     $select = $db->prepare("SELECT payload FROM records WHERE kind = 'scholars' AND student_id = ? FOR UPDATE");
@@ -545,7 +550,7 @@ function editScholarAssignments(PDO $db, array $request): ?array
     $catalog = scholarshipCatalog($db);
     $allowed = array_merge($originalNames, array_column($catalog, 0));
     if (!$names || array_diff($names, $allowed) || count(array_unique($names)) !== count($names) ||
-        !in_array($validated['status'], ['Approved', 'Pending', 'Not Approved'], true)) {
+        !in_array($validated['status'], ['Approved', 'Pending'], true)) {
         throw new InvalidArgumentException('Choose valid scholarships and a status.');
     }
     $historyStmt = $db->prepare("SELECT payload FROM records WHERE kind = 'discountHistory' AND BINARY JSON_UNQUOTE(JSON_EXTRACT(payload, '$.id')) = ?");
@@ -554,6 +559,9 @@ function editScholarAssignments(PDO $db, array $request): ?array
     $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
     validateScholarshipRules($names, $catalog, $existingHistory, $scholar['period'] ?? '', $maxResidency);
     validateScholarshipStatus($names, $validated['status'], $catalog);
+    if (array_key_exists('waivedAmount', $updated) && $updated['waivedAmount'] !== null && $updated['waivedAmount'] !== '' && (!hasTesOrTdp($names) || $validated['status'] !== 'Approved')) {
+        throw new InvalidArgumentException('Amount waived is available only for approved TES or TDP records.');
+    }
 
     $assignmentsChanged = (bool) (array_diff($names, $originalNames) || array_diff($originalNames, $names));
     $identityChanged = $updated['id'] !== $id || $updated['name'] !== $scholar['name'];
@@ -635,12 +643,15 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
     $catalog = scholarshipCatalog($db);
     $knownNames = array_column(array_filter($catalog, static fn($item) => empty($item[6])), 0);
     if (!$names || array_diff($names, $knownNames) || count(array_unique($names)) !== count($names) ||
-        !in_array($scholar['status'], ['Approved', 'Pending', 'Not Approved'], true)) {
+        !in_array($scholar['status'], ['Approved', 'Pending'], true)) {
         throw new InvalidArgumentException('Choose valid, active scholarships and a status.');
     }
     $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
     validateScholarshipRules($names, $catalog, [], $period, $maxResidency);
     validateScholarshipStatus($names, $scholar['status'], $catalog);
+    if (isset($scholar['waivedAmount']) && (!hasTesOrTdp($names) || $scholar['status'] !== 'Approved')) {
+        throw new InvalidArgumentException('Amount waived is available only for approved TES or TDP records.');
+    }
     $historyEntry = [
         'id' => $scholar['id'], 'name' => $scholar['name'], 'year' => $period,
         'semester' => $scholar['semester'] ?? '1st Semester', 'scholarships' => $names,
@@ -754,7 +765,7 @@ function decideRenewal(PDO $db, array $request): array
 {
     $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     $status = $request['status'] ?? null;
-    if ($id === false || !in_array($status, ['Approved', 'Not Approved'], true)) {
+    if ($id === false || !in_array($status, ['Approved'], true)) {
         throw new InvalidArgumentException('Choose a valid renewal record and decision.');
     }
     $select = $db->prepare('SELECT * FROM scholarship_assignments WHERE id = ? FOR UPDATE');

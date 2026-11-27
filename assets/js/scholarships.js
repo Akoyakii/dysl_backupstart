@@ -254,17 +254,19 @@ function updateSelectedScholarships(){
         names.innerHTML = selected.map(n => `<span class="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-dyci-blue shadow-sm dark:bg-slate-800 dark:text-blue-300">${escapeHtml(n)}</span>`).join("");
     }
     const form = document.getElementById("scholarForm");
+    const waivedInput = form?.elements.namedItem("waivedAmount");
+    if (waivedInput && !selected.length) waivedInput.closest("label")?.classList.add("hidden");
     if (form && selected.length) {
         const byName = new Map((window.scholarshipCatalog || []).map(item => [item[0], item]));
         const hasExternal = selected.some(name => byName.get(name)?.[1] === "External and Government Grants");
+        const hasTesOrTdp = selected.some(name => name === "TES" || name === "TDP");
         const statusSelect = form.elements.namedItem("status");
+        if (waivedInput) waivedInput.closest("label")?.classList.toggle("hidden", !hasTesOrTdp || statusSelect?.value !== "Approved");
         const extRequiresApproval = window._systemSettings?.externalRequiresApproval !== "0";
         const inHouseDefault = window._systemSettings?.inHouseDefaultStatus || "Approved";
         if (statusSelect) {
             const pending = statusSelect.querySelector('option[value="Pending"]') || [...statusSelect.options].find(option => option.textContent.trim() === "Pending");
-            const notApproved = statusSelect.querySelector('option[value="Not Approved"]') || [...statusSelect.options].find(option => option.textContent.trim() === "Not Approved");
             if (pending) pending.disabled = !hasExternal;
-            if (notApproved) notApproved.disabled = !hasExternal;
             if (!hasExternal || !statusSelect.value || statusSelect.value === "Pending" && !hasExternal) {
                 statusSelect.value = "Approved";
             } else if (!form.dataset.editId) {

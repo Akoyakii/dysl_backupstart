@@ -137,7 +137,7 @@ function buildSpreadsheetScholarBatch(iterable $rows, array $catalog): array
                 (int) $years[2] !== (int) $years[1] + 1) {
                 throw new InvalidArgumentException('Enter a school year such as 2025-2026.');
             }
-            if (!in_array($semester, SCHOLAR_SEMESTERS, true) || !in_array($status, ['Approved', 'Pending', 'Not Approved'], true) ||
+            if (!in_array($semester, SCHOLAR_SEMESTERS, true) || !in_array($status, ['Approved', 'Pending'], true) ||
                 array_diff($names, $catalog)) {
                 throw new InvalidArgumentException('Choose valid semester, status, and scholarship values from ScholarHub.');
             }

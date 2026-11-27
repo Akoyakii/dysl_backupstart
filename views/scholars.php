@@ -14,7 +14,7 @@
             <select id="scholarDepartment" data-change="renderScholars" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"><option value="">All colleges / departments</option></select>
         </label>
         <label class="text-sm font-semibold">Status
-            <select id="filter" data-change="renderScholars" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"><option value="All Status">All statuses</option><option>Approved</option><option>Pending</option><option>Not Approved</option></select>
+            <select id="filter" data-change="renderScholars" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"><option value="All Status">All statuses</option><option>Approved</option><option>Pending</option></select>
         </label>
     </div>
 </div>
@@ -73,7 +73,7 @@
                     <select id="renewalQueueSemester" data-change="renderRenewalQueue" class="mt-1 block w-full rounded-xl border bg-white px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-900"><option value="">All semesters</option><?php foreach (SCHOLAR_SEMESTERS as $semester): ?><option><?= $semester ?></option><?php endforeach; ?></select>
                 </label>
                 <label class="text-xs font-semibold">Status
-                    <select id="renewalQueueStatus" data-change="renderRenewalQueue" class="mt-1 block w-full rounded-xl border bg-white px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-900"><option value="Pending" selected>Pending</option><option value="">All statuses</option><option>Approved</option><option>Not Approved</option></select>
+                    <select id="renewalQueueStatus" data-change="renderRenewalQueue" class="mt-1 block w-full rounded-xl border bg-white px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-900"><option value="Pending" selected>Pending</option><option value="">All statuses</option><option>Approved</option></select>
                 </label>
                 <label class="text-xs font-semibold">Search queue
                     <input id="renewalQueueSearch" type="search" data-input="renderRenewalQueue" placeholder="Name, ID, scholarship" class="mt-1 block w-full rounded-xl border bg-white px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-900">

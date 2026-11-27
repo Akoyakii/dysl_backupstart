@@ -73,7 +73,6 @@ function scholarStatus(status) {
     const colors = {
         Approved: "text-emerald-800 dark:text-emerald-300",
         Pending: "text-amber-800 dark:text-amber-300",
-        "Not Approved": "text-rose-800 dark:text-rose-300"
     };
     return `<span class="text-xs font-semibold ${colors[status] || ""}">${escapeHtml(status)}</span>`;
 }
@@ -338,7 +337,6 @@ function renderRenewalQueue() {
         <td class="px-3 py-2.5">${scholarStatus(r.status)}</td>
         <td class="px-3 py-2.5">${r.status === "Pending" ? `<div class="flex flex-wrap gap-2">
             <button type="button" data-click="decideRenewal" data-renewal-id="${r.id}" data-status="Approved" class="rounded-lg bg-emerald-700 px-2.5 py-1 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60">Approve</button>
-            <button type="button" data-click="decideRenewal" data-renewal-id="${r.id}" data-status="Not Approved" class="rounded-lg border border-rose-300 px-2.5 py-1 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-60 dark:text-rose-300 dark:hover:bg-rose-950">Do not approve</button>
         </div>` : `<span class="text-xs tabular-nums text-slate-500">${escapeHtml(formatPhilippineTime(r.updated))}</span>`}</td>
     </tr>`).join("") : '<tr><td colspan="5" class="p-6 text-center text-slate-500">No renewal records match these filters.</td></tr>';
 }

@@ -107,7 +107,8 @@ function renderDashboardMetrics() {
                 labels: statuses,
                 datasets: [{data: [approved, pending, rejected], backgroundColor: ["#15976f", "#d9a11b", "#d95370"], borderWidth: 0}]
             },
-            options: {...options, cutout: "65%"}
+            options: {...options, cutout: "65%", plugins: {legend: {display: true, position: "right",
+                labels: {color: ticks, boxWidth: 12, padding: 10, font: {size: 12}}}}}
         });
     }
     if (!usagePlot.hidden) {

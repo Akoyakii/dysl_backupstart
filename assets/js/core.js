@@ -59,6 +59,7 @@ function bindRecordControls() {
             dashboardCardNav: (_event, button) => dashboardCardNav(button.dataset.target, button.dataset.filter),
             closeDashboardChartDetails: () => document.getElementById("dashboardChartDialog")?.close(),
             toggleAcademicItem: (_event, button) => toggleAcademicItem(button.dataset.kind, button.dataset.id, button.dataset.disabled === "true"),
+            deleteAcademicItem: (_event, button) => deleteAcademicItem(button.dataset.kind, button.dataset.id),
             setScholarshipView: (_event, button) => setScholarshipView(button.dataset.mode),
             toggleDataLock,
             toggleScholarshipDisabled: (_event, button) => toggleScholarshipDisabled(button.dataset.scholarshipName, button.dataset.disabled === "true"),
@@ -396,7 +397,7 @@ function renderAcademicLists() {
     const render = (id, items, kind, label) => {
         const box = document.getElementById(id);
         if (!box) return;
-        box.innerHTML = items.length ? items.map(item => `<div class="flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm dark:border-slate-700 ${item.disabled ? "opacity-50" : ""}"><span><b>${escapeHtml(kind === "program" ? item.code : item.name)}</b>${kind === "program" ? ` <span class="text-slate-500">${escapeHtml(item.name)}</span>` : ""}</span><button type="button" data-click="toggleAcademicItem" data-kind="${kind}" data-id="${item.id}" data-disabled="${item.disabled ? "false" : "true"}" class="text-xs font-bold text-dyci-blue dark:text-blue-300">${item.disabled ? "Enable" : "Disable"}</button></div>`).join("") : `<p class="text-sm text-slate-500">No ${label} added yet.</p>`;
+        box.innerHTML = items.length ? items.map(item => `<div class="flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm dark:border-slate-700 ${item.disabled ? "opacity-50" : ""}"><span><b>${escapeHtml(kind === "program" ? item.code : item.name)}</b>${kind === "program" ? ` <span class="text-slate-500">${escapeHtml(item.name)}</span>` : ""}</span><span class="flex gap-3"><button type="button" data-click="toggleAcademicItem" data-kind="${kind}" data-id="${item.id}" data-disabled="${item.disabled ? "false" : "true"}" class="text-xs font-bold text-dyci-blue dark:text-blue-300">${item.disabled ? "Enable" : "Disable"}</button><button type="button" data-click="deleteAcademicItem" data-kind="${kind}" data-id="${item.id}" class="text-xs font-bold text-rose-700 dark:text-rose-300">Remove</button></span></div>`).join("") : `<p class="text-sm text-slate-500">No ${label} added yet.</p>`;
     };
     render("departmentList", academicLists.departments || [], "department", "departments");
     render("programList", academicLists.programs || [], "program", "programs");
@@ -416,6 +417,12 @@ async function submitAcademicItem(event) {
 
 async function toggleAcademicItem(kind, id, disabled) {
     try { await requestRecords({action: "toggle-academic-item", kind, id: Number(id), disabled}); showToast(disabled ? "Academic item disabled." : "Academic item enabled."); }
+    catch (error) { showToast(error.message); }
+}
+
+async function deleteAcademicItem(kind, id) {
+    if (!confirm("Remove this academic item? Existing records will be protected.")) return;
+    try { await requestRecords({action: "delete-academic-item", kind, id: Number(id)}); showToast("Academic item removed."); }
     catch (error) { showToast(error.message); }
 }
 

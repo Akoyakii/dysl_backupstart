@@ -447,6 +447,22 @@ function toggleAcademicListItem(PDO $db, string $kind, int $id, bool $disabled):
     if ($stmt->rowCount() === 0) throw new DomainException('The academic item could not be found.');
 }
 
+function deleteAcademicListItem(PDO $db, string $kind, int $id): void
+{
+    if (!in_array($kind, ['department', 'program'], true) || $id < 1) throw new InvalidArgumentException('Choose a valid academic item.');
+    $table = $kind === 'department' ? 'college_departments' : 'academic_programs';
+    $column = $kind === 'department' ? 'name' : 'code';
+    $find = $db->prepare("SELECT $column FROM $table WHERE id = ?");
+    $find->execute([$id]);
+    $value = $find->fetchColumn();
+    if ($value === false) throw new DomainException('The academic item could not be found.');
+    $used = $db->prepare("SELECT 1 FROM records WHERE kind = 'scholars' AND (JSON_UNQUOTE(JSON_EXTRACT(payload, '$.program')) = ? OR JSON_UNQUOTE(JSON_EXTRACT(payload, '$.course')) LIKE CONCAT(?, ' %') OR JSON_UNQUOTE(JSON_EXTRACT(payload, '$.course')) = ?) LIMIT 1");
+    $used->execute([(string) $value, (string) $value, (string) $value]);
+    if ($used->fetchColumn()) throw new DomainException('This item is used by student records. Disable it instead of removing it.');
+    $remove = $db->prepare("DELETE FROM $table WHERE id = ?");
+    $remove->execute([$id]);
+}
+
 function saveSystemSettings(PDO $db, array $input): array
 {
     $defaults = defaultSystemSettings();

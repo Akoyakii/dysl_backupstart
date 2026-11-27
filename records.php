@@ -106,7 +106,7 @@ try {
         $request = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
     $action = $request['action'] ?? '';
-    if (in_array($action, ['toggle-data-lock', 'save-system-settings', 'add-academic-item', 'toggle-academic-item'], true) && !$isAdmin) {
+    if (in_array($action, ['toggle-data-lock', 'save-system-settings', 'add-academic-item', 'toggle-academic-item', 'delete-academic-item'], true) && !$isAdmin) {
         respond(403, ['error' => 'Only administrators can update system settings.']);
     }
     if (!$isAdmin && dataEntryLockStatus($db)['locked']) {
@@ -120,7 +120,7 @@ try {
     } elseif ($action === 'restore' && ($request['version'] ?? null) === 1 && is_array($request['records'] ?? null)) {
         $batch = $request['records'];
         if (!$isAdmin) $batch['activities'] = [];
-    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'carry-over-renewals', 'decide-renewal', 'toggle-data-lock', 'save-system-settings', 'add-academic-item', 'toggle-academic-item', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
+    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'carry-over-renewals', 'decide-renewal', 'toggle-data-lock', 'save-system-settings', 'add-academic-item', 'toggle-academic-item', 'delete-academic-item', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
         !(in_array($action, ['add-scholarship', 'edit-scholarship'], true) && is_array($request['type'] ?? null))) {
         throw new InvalidArgumentException('Invalid records request.');
     }
@@ -194,6 +194,11 @@ try {
             $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             toggleAcademicListItem($db, $kind, (int) $id, (bool) ($request['disabled'] ?? false));
             writeAuditEvent($db, $account, 'system.academic_item_updated', ['Type' => $kind, 'ID' => (int) $id, 'Status' => !empty($request['disabled']) ? 'Disabled' : 'Enabled']);
+        } elseif ($action === 'delete-academic-item') {
+            $kind = (string) ($request['kind'] ?? '');
+            $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            deleteAcademicListItem($db, $kind, (int) $id);
+            writeAuditEvent($db, $account, 'system.academic_item_removed', ['Type' => $kind, 'ID' => (int) $id]);
         } elseif ($action === 'add-semester') {
             $addedSem = addSemester($db, (string) ($request['schoolYear'] ?? ''), (string) ($request['semester'] ?? ''));
             writeAuditEvent($db, $account, 'system.semester_added', [

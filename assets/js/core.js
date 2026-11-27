@@ -145,10 +145,22 @@ function formatStudentId(input) {
     const beforeCaret = input.value.slice(0, input.selectionStart).replace(/[^0-9]/g, "").length;
     const digits = input.value.replace(/[^0-9]/g, "").slice(0, 9);
     const formatted = digits.length > 4 ? digits.slice(0, 4) + "-" + digits.slice(4) : digits;
-    if (formatted === input.value) return;
+    if (formatted === input.value) { checkStudentIdDuplicate(input); return; }
     input.value = formatted;
     const caret = Math.min(formatted.length, beforeCaret + (beforeCaret > 4 ? 1 : 0));
     input.setSelectionRange(caret, caret);
+    checkStudentIdDuplicate(input);
+}
+
+function checkStudentIdDuplicate(input) {
+    const warning = document.getElementById("studentIdDuplicateWarning");
+    if (!warning) return;
+    const value = input.value.trim();
+    const editingId = document.getElementById("scholarForm")?.dataset.editId || "";
+    const match = value.length === 10 ? scholars.find(student => student.id === value && student.id !== editingId) : null;
+    warning.textContent = match ? `Student ID ${value} is already used by ${match.name}.` : "";
+    warning.classList.toggle("hidden", !match);
+    input.setCustomValidity(match ? "This student ID is already in use." : "");
 }
 
 async function submitScholar(e) {
@@ -266,6 +278,10 @@ async function submitScholar(e) {
     // 6. Clean up UI and re-render
     closeModal();
     form.reset();
+    const duplicateWarning = document.getElementById("studentIdDuplicateWarning");
+    const studentIdInput = form.elements.namedItem("id");
+    if (duplicateWarning) { duplicateWarning.textContent = ""; duplicateWarning.classList.add("hidden"); }
+    if (studentIdInput) studentIdInput.setCustomValidity("");
     clearScholarshipSelection();
     document.getElementById("scholarshipDisclosure").open = false;
     document.getElementById("studentScholarshipSearch").value = "";

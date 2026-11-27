@@ -14,6 +14,7 @@
     <label class="block text-sm font-bold">Student ID *
         <input name="id" required inputmode="numeric" pattern="[0-9]{4}-[0-9]{5}" maxlength="10" data-input="formatStudentId"
             class="mt-2 w-full rounded-xl border bg-white px-4 py-3 font-normal tabular-nums dark:border-slate-700 dark:bg-slate-900" placeholder="2026-00125">
+        <p id="studentIdDuplicateWarning" class="mt-2 hidden text-xs font-semibold text-rose-700 dark:text-rose-300" role="alert"></p>
     </label>
 
     <label class="block text-sm font-bold md:col-span-2">Program / Course *

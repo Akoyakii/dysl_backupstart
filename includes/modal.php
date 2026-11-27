@@ -118,44 +118,20 @@
             </div>
             <button type="button" data-click="closeViewModal" class="rounded-xl border px-3 py-2 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">✕</button>
         </div>
-        <div class="p-5 sm:p-6 space-y-6">
-            <div>
-                <h3 class="text-2xl font-black text-dyci-blue dark:text-blue-400" id="viewName"></h3>
-                <p class="text-sm font-bold text-slate-500" id="viewId"></p>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
-                <div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Course / Year</span>
-                    <div class="font-bold mt-1" id="viewCourse"></div>
-                </div>
-                <div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</span>
-                    <div class="mt-1">
-                        <span id="viewStatus" class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700"></span>
-                    </div>
-                </div>
-                <div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Last Updated</span>
-                    <div class="font-bold mt-1" id="viewUpdated"></div>
-                </div>
-                <div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">School year / semester</span>
-                    <div class="font-bold mt-1" id="viewPeriod"></div>
-                </div>
-            </div>
-
-            <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assigned Scholarships</span>
-                <div id="viewScholarships" class="mt-3 flex flex-wrap gap-2"></div>
-            </div>
-
-            <div>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Discount &amp; Scholarship History</span>
+        <div class="p-5 sm:p-6">
+            <div class="grid grid-cols-1 border border-slate-300 dark:border-slate-700 sm:grid-cols-[1fr_auto_auto_auto]">
+                <div class="border-b p-4 text-sm font-bold sm:border-b-0 sm:border-r">School year: <span id="viewPeriod" class="ml-2"></span></div>
                 <div id="viewSchoolYears" class="mt-3 flex flex-wrap gap-2"></div>
                 <div id="viewSemesters" class="mt-2 flex flex-wrap gap-2"></div>
-                <div id="viewTermDetails" class="mt-3 rounded-xl border bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800"></div>
-                <div id="viewDiscountHistory" class="mt-2 overflow-x-auto rounded-xl border dark:border-slate-700"></div>
+                <div class="border-b p-4 text-sm sm:border-b-0 sm:border-l">Term</div>
+            </div>
+            <div class="grid border-x border-b border-slate-300 dark:border-slate-700 sm:grid-cols-[1.15fr_1fr]">
+                <div class="space-y-5 border-b p-5 sm:border-b-0 sm:border-r">
+                    <h3 class="text-xl font-black" id="viewName"></h3>
+                    <div class="grid gap-4 text-sm sm:grid-cols-2"><div><span class="text-slate-500">Student ID</span><div id="viewId" class="font-bold"></div></div><div><span class="text-slate-500">Course / Year</span><div id="viewCourse" class="font-bold"></div></div><div><span class="text-slate-500">Status</span><div><span id="viewStatus" class="font-bold"></span></div></div><div><span class="text-slate-500">Last updated</span><div id="viewUpdated" class="font-bold"></div></div></div>
+                    <div><span class="text-xs font-bold uppercase tracking-wide text-slate-500">Assigned scholarships</span><div id="viewScholarships" class="mt-2 flex flex-wrap gap-2"></div></div>
+                </div>
+                <div class="p-5"><div id="viewTermDetails" class="h-full rounded-none bg-transparent"></div><div id="viewDiscountHistory" hidden></div></div>
             </div>
         </div>
         <div class="flex flex-wrap justify-end gap-2 border-t p-5 dark:border-slate-800">

@@ -117,7 +117,7 @@ function openViewModal(id) {
     document.getElementById("viewUpdated").textContent = formatPhilippineTime(student.updated);
     const studentHistory = discountHistory.filter(record => record.id === student.id);
     const {year, semester} = scholarPeriod(student, studentHistory);
-    document.getElementById("viewPeriod").textContent = [year, semester].filter(Boolean).join(" · ") || "—";
+    document.getElementById("viewPeriod").textContent = year || "—";
     renderViewTermTabs(student, studentHistory);
 
     const statusEl = document.getElementById("viewStatus");
@@ -181,7 +181,7 @@ function renderViewTermTabs(student, history, activeYear = null, activeTerm = nu
     const selectedYear = activeYear && years.includes(activeYear) ? activeYear : (years[0] || student.period || "—");
     const terms = [...new Set(history.filter(row => row.year === selectedYear).map(row => row.semester).filter(Boolean))];
     const selectedTerm = activeTerm && terms.includes(activeTerm) ? activeTerm : (terms[0] || "—");
-    yearBox.innerHTML = years.length ? `<span class="self-center text-xs font-bold text-slate-500">School year:</span>${years.map(year => `<button type="button" class="rounded-lg border px-3 py-1.5 text-xs font-bold ${year === selectedYear ? "bg-dyci-blue text-white" : ""}" data-view-term-year="${escapeHtml(year)}">${escapeHtml(year)}</button>`).join("")}` : "";
+    yearBox.innerHTML = years.length ? years.map(year => `<button type="button" class="rounded-lg border px-3 py-1.5 text-xs font-bold ${year === selectedYear ? "bg-dyci-blue text-white" : ""}" data-view-term-year="${escapeHtml(year)}">${escapeHtml(year)}</button>`).join("") : "";
     semesterBox.innerHTML = terms.length ? terms.map(term => `<button type="button" class="rounded-lg border px-4 py-1.5 text-xs font-bold ${term === selectedTerm ? "bg-dyci-blue text-white" : ""}" data-view-term-semester="${escapeHtml(term)}">${escapeHtml(term)}</button>`).join("") : "";
     const record = history.find(row => row.year === selectedYear && row.semester === selectedTerm);
     const names = record?.scholarships || scholarshipNames(student);

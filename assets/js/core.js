@@ -385,6 +385,7 @@ function openModal(id){
     document.getElementById("studentScholarshipSearch").value = "";
     document.getElementById("studentScholarshipPicker").replaceChildren();
     renderScholarshipPicker(student ? scholarshipNames(student) : []);
+    syncSystemSettings();
     modal.classList.add("open");
     document.getElementById("scholarFormScroll").scrollTop = 0;
 }

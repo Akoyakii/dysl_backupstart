@@ -258,7 +258,7 @@ async function submitScholar(e) {
     }
     
     // 2. Format the Name
-    let fullName = lastName + ", " + firstName + (middleName ? " " + middleName.charAt(0) + "." : "");
+    let fullName = lastName + ", " + firstName + (middleName ? " " + middleName : "");
     let courseYear = course + " · " + year;
 
     let s = {

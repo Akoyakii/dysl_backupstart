@@ -120,8 +120,8 @@
         </div>
         <div class="p-5 sm:p-6">
             <div class="grid grid-cols-1 border border-slate-300 dark:border-slate-700 sm:grid-cols-[1.2fr_1fr_1fr_3rem]">
-                <div class="border-b p-4 text-sm font-bold sm:border-b-0 sm:border-r">School year: <span id="viewPeriod" class="ml-2"></span></div>
-                <div id="viewSchoolYears" class="flex flex-wrap items-center gap-1 border-b p-2 sm:border-b-0 sm:border-r"></div>
+                <div class="border-b p-4 text-sm font-bold sm:border-b-0 sm:border-r">School year: <select id="viewSchoolYears" class="ml-2 rounded border px-2 py-1 text-sm font-bold dark:border-slate-700 dark:bg-slate-800"></select></div>
+                <div class="hidden sm:block"></div>
                 <div id="viewSemesters" class="flex flex-wrap items-center gap-1 border-b p-2 sm:border-b-0 sm:border-r"></div>
                 <div class="flex items-center justify-center p-2 text-sm font-bold">X</div>
             </div>
@@ -129,7 +129,6 @@
                 <div class="space-y-5 border-b p-5 sm:border-b-0 sm:border-r">
                     <h3 class="text-xl font-black" id="viewName"></h3>
                     <div class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2"><div><span class="text-slate-500">First Name:</span><div id="viewFirstName" class="font-bold"></div></div><div><span class="text-slate-500">Middle Name:</span><div id="viewMiddleName" class="font-bold"></div></div><div><span class="text-slate-500">Last Name:</span><div id="viewLastName" class="font-bold"></div></div><div><span class="text-slate-500">School ID:</span><div id="viewId" class="font-bold"></div></div><div><span class="text-slate-500">Email:</span><div class="font-bold">—</div></div><div><span class="text-slate-500">Phone Number:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Address:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Course / Year:</span><div id="viewCourse" class="font-bold"></div></div><div><span class="text-slate-500">Status:</span><div><span id="viewStatus" class="font-bold"></span></div></div><div><span class="text-slate-500">Last updated:</span><div id="viewUpdated" class="font-bold"></div></div></div>
-                    <div><span class="text-xs font-bold uppercase tracking-wide text-slate-500">Assigned scholarships</span><div id="viewScholarships" class="mt-2 flex flex-wrap gap-2"></div></div>
                 </div>
                 <div class="p-5"><div id="viewTermDetails" class="h-full rounded-none bg-transparent"></div><div id="viewDiscountHistory" hidden></div></div>
             </div>

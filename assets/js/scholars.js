@@ -122,7 +122,7 @@ function openViewModal(id) {
     document.getElementById("viewUpdated").textContent = formatPhilippineTime(student.updated);
     const studentHistory = discountHistory.filter(record => record.id === student.id);
     const {year, semester} = scholarPeriod(student, studentHistory);
-    document.getElementById("viewPeriod").textContent = year || "—";
+    document.getElementById("viewPeriod").value = year || "";
     renderViewTermTabs(student, studentHistory);
 
     const statusEl = document.getElementById("viewStatus");
@@ -137,7 +137,7 @@ function openViewModal(id) {
     const schContainer = document.getElementById("viewScholarships");
     const names = scholarshipNames(student);
     const catalog = new Map((window.scholarshipCatalog || []).map(s => [s[0], s]));
-    schContainer.innerHTML = names.map(n => {
+    if (schContainer) schContainer.innerHTML = names.map(n => {
         const type = catalog.get(n);
         const codeDesc = scholarshipCodeDescription(n);
         return `<div class="rounded-xl bg-dyci-blue/10 px-3 py-2 dark:bg-dyci-blue/30">
@@ -186,13 +186,18 @@ function renderViewTermTabs(student, history, activeYear = null, activeTerm = nu
     const selectedYear = activeYear && years.includes(activeYear) ? activeYear : (years[0] || student.period || "—");
     const terms = [...new Set(history.filter(row => row.year === selectedYear).map(row => row.semester).filter(Boolean))];
     const selectedTerm = activeTerm && terms.includes(activeTerm) ? activeTerm : (terms[0] || "—");
-    yearBox.innerHTML = years.length ? years.map(year => `<button type="button" class="rounded-lg border px-3 py-1.5 text-xs font-bold ${year === selectedYear ? "bg-dyci-blue text-white" : ""}" data-view-term-year="${escapeHtml(year)}">${escapeHtml(year)}</button>`).join("") : "";
+    yearBox.replaceChildren(...years.map(year => new Option(year, year)));
+    yearBox.value = selectedYear;
+    yearBox.onchange = () => renderViewTermTabs(student, history, yearBox.value, null);
+    const order = {"1st Semester": 1, "2nd Semester": 2, "Summer": 3};
+    terms.sort((a, b) => (order[a] || 99) - (order[b] || 99));
     semesterBox.innerHTML = terms.length ? terms.map(term => `<button type="button" class="rounded-lg border px-4 py-1.5 text-xs font-bold ${term === selectedTerm ? "bg-dyci-blue text-white" : ""}" data-view-term-semester="${escapeHtml(term)}">${escapeHtml(term.replace(/\s+Semester$/i, ""))}</button>`).join("") : "";
     const record = history.find(row => row.year === selectedYear && row.semester === selectedTerm);
     const names = record?.scholarships || scholarshipNames(student);
     const external = names.filter(name => ["TES", "TDP"].includes(name));
     const internal = names.filter(name => !external.includes(name) && !["District", "Provincial", "International"].some(type => name.startsWith(type)));
-    details.innerHTML = `<div class="divide-y text-sm dark:divide-slate-700"><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">External:</span><span class="text-right font-bold">${escapeHtml(external.join(", ") || "—")}</span></div><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">Internal:</span><span class="text-right font-bold">${escapeHtml(internal.join(", ") || "—")}</span></div><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">Amount:</span><span class="text-right font-bold tabular-nums">${record?.waivedAmount != null ? `₱${Number(record.waivedAmount).toLocaleString("en-PH", {minimumFractionDigits: 2})}` : "—"}</span></div></div>`;
+    const amount = record?.waivedAmount != null ? "₱" + Number(record.waivedAmount).toLocaleString("en-PH", {minimumFractionDigits: 2}) : "—";
+    details.innerHTML = `<div class="divide-y text-sm dark:divide-slate-700"><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">External:</span><span class="text-right font-bold">${escapeHtml(external.join(", ") || "—")}<small class="mt-1 block font-semibold text-amber-600">${escapeHtml(record?.status || student.status || "")}</small></span></div><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">Internal:</span><span class="text-right font-bold">${escapeHtml(internal.join(", ") || "—")}</span></div><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">Amount:</span><span class="text-right font-bold tabular-nums">${escapeHtml(amount)}</span></div></div>`;
     yearBox.querySelectorAll("[data-view-term-year]").forEach(button => button.addEventListener("click", () => renderViewTermTabs(student, history, button.dataset.viewTermYear, null)));
     semesterBox.querySelectorAll("[data-view-term-semester]").forEach(button => button.addEventListener("click", () => {
         renderViewTermTabs(student, history, selectedYear, button.dataset.viewTermSemester);

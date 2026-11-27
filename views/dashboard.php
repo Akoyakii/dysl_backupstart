@@ -49,13 +49,13 @@
             <section class="dashboard-chart-card min-w-0 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                 <h2 class="font-bold">Scholar decisions</h2>
                 <p id="dashboardStatusSummary" class="mt-1 text-sm text-slate-600 dark:text-slate-300"></p>
-                <p class="mt-1 text-xs text-slate-400">Source: current student scholar records</p>
+                <p class="mt-1 text-xs font-medium text-slate-400">Source: current student scholar records</p>
                 <div id="dashboardStatusPlot" class="relative mt-5 h-64" hidden><canvas id="dashboardStatusChart" aria-hidden="true"></canvas></div>
             </section>
             <section class="dashboard-chart-card min-w-0 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                 <h2 class="font-bold">Most-used scholarships</h2>
                 <p id="dashboardUsageSummary" class="mt-1 text-sm text-slate-600 dark:text-slate-300"></p>
-                <p class="mt-1 text-xs text-slate-400">Source: scholarship availment records</p>
+                <p class="mt-1 text-xs font-medium text-slate-400">Source: scholarship availment records</p>
                 <div id="dashboardUsagePlot" class="relative mt-5 h-64" hidden><canvas id="dashboardUsageChart" aria-hidden="true"></canvas></div>
             </section>
         </div>
@@ -63,6 +63,7 @@
             <section class="dashboard-chart-card min-w-0 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                 <h2 class="font-bold">Scholars by department</h2>
                 <p id="dashboardDeptSummary" class="mt-1 text-sm text-slate-600 dark:text-slate-300"></p>
+                <p class="mt-1 text-xs font-medium text-slate-400">Source: current student scholar records</p>
                 <div id="dashboardDeptPlot" class="relative mt-5 h-64" hidden><canvas id="dashboardDeptChart" aria-hidden="true"></canvas></div>
             </section>
             <section class="dashboard-chart-card min-w-0 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">

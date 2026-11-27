@@ -93,7 +93,13 @@ function renderDashboardMetrics() {
     const ticks = dark ? "#e7e7ea" : "#475569";
     const grid = dark ? "#39393f" : "#e2e8f0";
     const options = {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}};
-    const barOptions = (indexAxis = "y") => ({...options, indexAxis, scales: {
+    const barOptions = (indexAxis = "y") => ({...options, indexAxis, scales: indexAxis === "x" ? {
+        x: {grid: {display: false}, ticks: {color: ticks, autoSkip: false, maxRotation: 45, minRotation: 0, callback(value) {
+            const name = this.getLabelForValue(value);
+            return name.length > 18 ? name.slice(0, 17) + "\u2026" : name;
+        }}},
+        y: {beginAtZero: true, grid: {color: grid}, ticks: {color: ticks, precision: 0}}
+    } : {
         x: {beginAtZero: true, grid: {color: grid}, ticks: {color: ticks, precision: 0}},
         y: {grid: {display: false}, ticks: {color: ticks, callback(value) {
             const name = this.getLabelForValue(value);
@@ -118,7 +124,7 @@ function renderDashboardMetrics() {
                 labels: usage.map(([name]) => name),
                 datasets: [{label: "Assignments", data: usage.map(([, count]) => count), backgroundColor: dark ? "#fff" : "#1a3b9c", borderRadius: 4}]
             },
-            options: barOptions()
+            options: barOptions("x")
         });
     }
     if (!deptPlot.hidden) {
@@ -128,7 +134,7 @@ function renderDashboardMetrics() {
                 labels: deptEntries.map(([name]) => name),
                 datasets: [{label: "Scholars", data: deptEntries.map(([, count]) => count), backgroundColor: dark ? "#F4B925" : "#1A3B9C", borderRadius: 4}]
             },
-            options: barOptions()
+            options: barOptions("x")
         });
     }
     if (!coveragePlot.hidden) {

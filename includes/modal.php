@@ -129,7 +129,7 @@
                     <h3 class="text-xl font-black" id="viewName"></h3>
                     <div class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2"><div><span class="text-slate-500">First Name:</span><div id="viewFirstName" class="font-bold"></div></div><div><span class="text-slate-500">Middle Name:</span><div id="viewMiddleName" class="font-bold"></div></div><div><span class="text-slate-500">Last Name:</span><div id="viewLastName" class="font-bold"></div></div><div><span class="text-slate-500">School ID:</span><div id="viewId" class="font-bold"></div></div><div><span class="text-slate-500">Email:</span><div class="font-bold">—</div></div><div><span class="text-slate-500">Phone Number:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Address:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Course / Year:</span><div id="viewCourse" class="font-bold"></div></div><div><span class="text-slate-500">Status:</span><div><span id="viewStatus" class="font-bold"></span></div></div><div><span class="text-slate-500">Last updated:</span><div id="viewUpdated" class="font-bold"></div></div></div>
                 </div>
-                <div class="p-5"><div id="viewTermDetails" class="h-full rounded-none bg-transparent"></div><div id="viewDiscountHistory" hidden></div></div>
+                <div class="bg-slate-50/60 p-5 dark:bg-slate-800/30"><div id="viewTermDetails" class="h-full rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"></div><div id="viewDiscountHistory" hidden></div></div>
             </div>
         </div>
         <div class="flex flex-wrap justify-end gap-2 border-t p-5 dark:border-slate-800">

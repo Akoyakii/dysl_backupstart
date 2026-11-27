@@ -145,19 +145,14 @@ function openViewModal(id) {
     const historyContainer = document.getElementById("viewDiscountHistory");
     if (historyContainer) {
         if (studentHistory.length) {
-            const rows = studentHistory.map(record =>
-                `<tr class="border-t dark:border-slate-700">
-                    <td class="px-3 py-2 tabular-nums">${escapeHtml(record.year)}</td>
-                    <td class="px-3 py-2">${escapeHtml(record.semester)}</td>
-                    <td class="px-3 py-2">${record.scholarships.map(n =>
-                        `<span class="mr-1 inline-block rounded-full bg-dyci-blue/10 px-2 py-0.5 text-xs font-semibold text-dyci-blue dark:bg-dyci-blue/30 dark:text-blue-300">${escapeHtml(n)}</span>`
-                    ).join("")}</td>
-                </tr>`
-            ).join("");
-            historyContainer.innerHTML = `<table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    <tr><th class="px-3 py-2">School year</th><th class="px-3 py-2">Semester</th><th class="px-3 py-2">Scholarships</th></tr>
-                </thead><tbody>${rows}</tbody></table>`;
+            const semesters = [...new Set(studentHistory.map(record => record.semester).filter(Boolean))];
+            const years = [...new Set(studentHistory.map(record => record.year).filter(Boolean))];
+            const cell = (year, semester) => {
+                const record = studentHistory.find(item => item.year === year && item.semester === semester);
+                return record ? record.scholarships.map(n => `<span class="mb-1 mr-1 inline-block rounded-full bg-dyci-blue/10 px-2 py-0.5 text-xs font-semibold text-dyci-blue dark:bg-dyci-blue/30 dark:text-blue-300">${escapeHtml(n)}</span>`).join("") : `<span class="text-slate-400">—</span>`;
+            };
+            const rows = years.map(year => `<tr class="border-t dark:border-slate-700"><td class="px-3 py-3 font-semibold tabular-nums">${escapeHtml(year)}</td>${semesters.map(semester => `<td class="min-w-32 px-3 py-3 align-top">${cell(year, semester)}</td>`).join("")}</tr>`).join("");
+            historyContainer.innerHTML = `<table class="w-full text-left text-sm"><thead class="bg-slate-50 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300"><tr><th class="px-3 py-3">School year</th>${semesters.map(semester => `<th class="px-3 py-3">${escapeHtml(semester)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
         } else {
             historyContainer.innerHTML = `<p class="text-sm text-slate-500">No discount history found.</p>`;
         }

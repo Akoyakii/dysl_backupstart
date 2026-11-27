@@ -110,7 +110,7 @@
 <?php endif; ?>
 <!-- VIEW SCHOLAR MODAL -->
 <div id="viewModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-    <div class="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-white/20 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+    <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/20 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <div class="sticky top-0 z-10 flex items-center justify-between border-b bg-white/95 px-5 py-4 backdrop-blur sm:px-6 dark:border-slate-800 dark:bg-slate-900/95">
             <div>
                 <h2 class="text-xl font-black tracking-tight">Scholar Details</h2>

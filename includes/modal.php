@@ -119,11 +119,10 @@
             <button type="button" data-click="closeViewModal" class="rounded-xl border px-3 py-2 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">✕</button>
         </div>
         <div class="p-5 sm:p-6">
-            <div class="grid grid-cols-1 border border-slate-300 dark:border-slate-700 sm:grid-cols-[1.2fr_1fr_1fr_3rem]">
+            <div class="grid grid-cols-1 border border-slate-300 dark:border-slate-700 sm:grid-cols-[1.2fr_1fr_1fr]">
                 <div class="border-b p-4 text-sm font-bold sm:border-b-0 sm:border-r">School year: <select id="viewSchoolYears" class="ml-2 rounded border px-2 py-1 text-sm font-bold dark:border-slate-700 dark:bg-slate-800"></select></div>
                 <div class="hidden sm:block"></div>
                 <div id="viewSemesters" class="flex flex-wrap items-center gap-1 border-b p-2 sm:border-b-0 sm:border-r"></div>
-                <div class="flex items-center justify-center p-2 text-sm font-bold">X</div>
             </div>
             <div class="grid border-x border-b border-slate-300 dark:border-slate-700 sm:grid-cols-[1.15fr_1fr]">
                 <div class="space-y-5 border-b p-5 sm:border-b-0 sm:border-r">

@@ -58,6 +58,7 @@ function bindRecordControls() {
             openViewModal: (_event, button) => openViewModal(button.dataset.studentId),
             dashboardCardNav: (_event, button) => dashboardCardNav(button.dataset.target, button.dataset.filter),
             closeDashboardChartDetails: () => document.getElementById("dashboardChartDialog")?.close(),
+            toggleAcademicItem: (_event, button) => toggleAcademicItem(button.dataset.kind, button.dataset.id, button.dataset.disabled === "true"),
             setScholarshipView: (_event, button) => setScholarshipView(button.dataset.mode),
             toggleDataLock,
             toggleScholarshipDisabled: (_event, button) => toggleScholarshipDisabled(button.dataset.scholarshipName, button.dataset.disabled === "true"),
@@ -78,7 +79,7 @@ function bindRecordControls() {
             formatStudentId: (_event, input) => formatStudentId(input),
             renderRenewalSources, renderRenewalQueue,
         },
-        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet, submitNewSemester, submitCarryOverRenewals, submitSystemSettings}
+        submit: {submitScholar, submitScholarshipType, importScholarSpreadsheet, submitNewSemester, submitCarryOverRenewals, submitSystemSettings, submitAcademicItem}
     };
     Object.entries(actions).forEach(([type, handlers]) => {
         document.addEventListener(type, event => {
@@ -387,7 +388,35 @@ function renderAll(){
     document.getElementById("statScholars").textContent = scholars.length;
     document.getElementById("dashboardScholarshipCount").textContent = window.scholarshipCatalog?.length || 0;
     renderDashboardMetrics();
+    renderAcademicLists();
     updateDataLockBanner();
+}
+
+function renderAcademicLists() {
+    const render = (id, items, kind, label) => {
+        const box = document.getElementById(id);
+        if (!box) return;
+        box.innerHTML = items.length ? items.map(item => `<div class="flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm dark:border-slate-700 ${item.disabled ? "opacity-50" : ""}"><span><b>${escapeHtml(kind === "program" ? item.code : item.name)}</b>${kind === "program" ? ` <span class="text-slate-500">${escapeHtml(item.name)}</span>` : ""}</span><button type="button" data-click="toggleAcademicItem" data-kind="${kind}" data-id="${item.id}" data-disabled="${item.disabled ? "false" : "true"}" class="text-xs font-bold text-dyci-blue dark:text-blue-300">${item.disabled ? "Enable" : "Disable"}</button></div>`).join("") : `<p class="text-sm text-slate-500">No ${label} added yet.</p>`;
+    };
+    render("departmentList", academicLists.departments || [], "department", "departments");
+    render("programList", academicLists.programs || [], "program", "programs");
+    const course = document.querySelector('#scholarForm select[name="course"]');
+    const program = document.querySelector('#scholarForm select[name="program"]');
+    if (course && academicLists.departments?.length) { const current = course.value; course.replaceChildren(new Option("Select College", ""), ...academicLists.departments.filter(x => !x.disabled).map(x => new Option(x.name, x.name))); course.value = current; }
+    if (program && academicLists.programs?.length) { const current = program.value; program.replaceChildren(new Option("Select Program (Optional)", ""), ...academicLists.programs.filter(x => !x.disabled).map(x => new Option(`${x.code} — ${x.name}`, x.code))); program.value = current; }
+}
+
+async function submitAcademicItem(event) {
+    event.preventDefault();
+    const form = event.target, data = new FormData(form), item = {value: (data.get("value") || "").trim()};
+    if (data.get("code")) item.code = (data.get("code") || "").trim();
+    try { await requestRecords({action: "add-academic-item", kind: data.get("kind"), item}); form.reset(); showToast("Academic item added."); }
+    catch (error) { showToast(error.message); }
+}
+
+async function toggleAcademicItem(kind, id, disabled) {
+    try { await requestRecords({action: "toggle-academic-item", kind, id: Number(id), disabled}); showToast(disabled ? "Academic item disabled." : "Academic item enabled."); }
+    catch (error) { showToast(error.message); }
 }
 
 function syncCustomSemesters() {

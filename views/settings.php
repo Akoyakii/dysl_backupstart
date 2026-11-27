@@ -15,7 +15,7 @@ $backupList = array_slice($backupList, 0, 15);
 ?>
 <section id="settings" class="view">
     <h1 class="mb-6 text-balance text-3xl font-black">Settings &amp; Administration</h1>
-    <div class="mb-6 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+    <?php if (false): ?><div class="mb-6 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <h2 class="text-lg font-bold">System settings</h2>
         <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Configure active academic period, pagination, scholarship rules, and workspace defaults.</p>
         <form id="systemSettingsForm" data-submit="submitSystemSettings" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -57,6 +57,7 @@ $backupList = array_slice($backupList, 0, 15);
             </div>
         </form>
     </div>
+    </div><?php endif; ?>
     <div class="mb-6 rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <h2 class="text-lg font-bold">Staff data entry lock</h2>
         <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Lock staff data entry during reporting periods or at the end of a semester so staff cannot add or edit records. Administrators retain full access.</p>

@@ -1,4 +1,5 @@
 let scholars = [], activities = [], discountHistory = [], audit = [], renewals = [];
+let academicLists = {departments: [], programs: []};
 let recordsQueue = Promise.resolve();
 let recordsUpdatedAt = 0;
 let recordsRefresh = null;
@@ -52,6 +53,7 @@ function requestRecords(request, preview) {
         ({scholars, activities, discountHistory} = records);
         recordsUpdatedAt = Date.now();
         if (Array.isArray(records.catalog)) window.scholarshipCatalog = records.catalog;
+        if (records.academicLists && typeof records.academicLists === "object") academicLists = records.academicLists;
         if (typeof records.dataEntryLocked === "boolean") {
             window._dataEntryLocked = records.dataEntryLocked;
             window._dataEntryLockReason = records.dataEntryLockReason || "";

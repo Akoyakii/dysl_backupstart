@@ -408,6 +408,45 @@ function readSystemSettings(PDO $db): array
     return $settings;
 }
 
+function academicLists(PDO $db): array
+{
+    try {
+        $departments = $db->query('SELECT id, name, disabled FROM college_departments ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
+        $programs = $db->query('SELECT id, code, name, disabled FROM academic_programs ORDER BY code')->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $error) {
+        if ((int) ($error->errorInfo[1] ?? 0) === 1146) return ['departments' => [], 'programs' => []];
+        throw $error;
+    }
+    return ['departments' => $departments, 'programs' => $programs];
+}
+
+function saveAcademicListItem(PDO $db, string $kind, array $input): array
+{
+    $value = trim((string) ($input['value'] ?? ''));
+    if ($kind === 'department') {
+        if ($value === '' || strlen($value) > 160) throw new InvalidArgumentException('Enter a college or department name up to 160 characters.');
+        $stmt = $db->prepare('INSERT INTO college_departments (name, created_at) VALUES (?, UTC_TIMESTAMP())');
+        $stmt->execute([$value]);
+        return ['type' => 'department', 'value' => $value];
+    }
+    $code = strtoupper(trim((string) ($input['code'] ?? '')));
+    if ($code === '' || !preg_match('/\A[A-Z0-9][A-Z0-9-]{1,31}\z/', $code) || $value === '' || strlen($value) > 160) {
+        throw new InvalidArgumentException('Enter a valid program code and name.');
+    }
+    $stmt = $db->prepare('INSERT INTO academic_programs (code, name, created_at) VALUES (?, ?, UTC_TIMESTAMP())');
+    $stmt->execute([$code, $value]);
+    return ['type' => 'program', 'value' => $code . ' — ' . $value];
+}
+
+function toggleAcademicListItem(PDO $db, string $kind, int $id, bool $disabled): void
+{
+    $table = $kind === 'department' ? 'college_departments' : 'academic_programs';
+    if (!in_array($kind, ['department', 'program'], true) || $id < 1) throw new InvalidArgumentException('Choose a valid academic item.');
+    $stmt = $db->prepare("UPDATE $table SET disabled = ? WHERE id = ?");
+    $stmt->execute([$disabled ? 1 : 0, $id]);
+    if ($stmt->rowCount() === 0) throw new DomainException('The academic item could not be found.');
+}
+
 function saveSystemSettings(PDO $db, array $input): array
 {
     $defaults = defaultSystemSettings();

@@ -84,6 +84,7 @@ try {
         $records['semesters'] = availableSemesters($db);
         $records['renewals'] = readRenewals($db);
         $records['systemSettings'] = readSystemSettings($db);
+        $records['academicLists'] = academicLists($db);
         if ($logRead) writeAccessAuditEvent($db, $account, 'records.viewed');
         respond(200, $records);
     }
@@ -105,7 +106,7 @@ try {
         $request = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
     }
     $action = $request['action'] ?? '';
-    if (in_array($action, ['toggle-data-lock', 'save-system-settings'], true) && !$isAdmin) {
+    if (in_array($action, ['toggle-data-lock', 'save-system-settings', 'add-academic-item', 'toggle-academic-item'], true) && !$isAdmin) {
         respond(403, ['error' => 'Only administrators can update system settings.']);
     }
     if (!$isAdmin && dataEntryLockStatus($db)['locked']) {
@@ -119,7 +120,7 @@ try {
     } elseif ($action === 'restore' && ($request['version'] ?? null) === 1 && is_array($request['records'] ?? null)) {
         $batch = $request['records'];
         if (!$isAdmin) $batch['activities'] = [];
-    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'carry-over-renewals', 'decide-renewal', 'toggle-data-lock', 'save-system-settings', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
+    } elseif (!in_array($action, ['decide-scholar', 'edit-scholar', 'carry-over-renewals', 'decide-renewal', 'toggle-data-lock', 'save-system-settings', 'add-academic-item', 'toggle-academic-item', 'add-semester', 'toggle-scholarship-disabled', 'delete-scholarship'], true) &&
         !(in_array($action, ['add-scholarship', 'edit-scholarship'], true) && is_array($request['type'] ?? null))) {
         throw new InvalidArgumentException('Invalid records request.');
     }
@@ -185,6 +186,14 @@ try {
             ]);
         } elseif ($action === 'save-system-settings') {
             writeAuditEvent($db, $account, 'system.settings_updated', saveSystemSettings($db, $request['settings'] ?? []));
+        } elseif ($action === 'add-academic-item') {
+            $item = saveAcademicListItem($db, (string) ($request['kind'] ?? ''), is_array($request['item'] ?? null) ? $request['item'] : []);
+            writeAuditEvent($db, $account, 'system.academic_item_added', $item);
+        } elseif ($action === 'toggle-academic-item') {
+            $kind = (string) ($request['kind'] ?? '');
+            $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            toggleAcademicListItem($db, $kind, (int) $id, (bool) ($request['disabled'] ?? false));
+            writeAuditEvent($db, $account, 'system.academic_item_updated', ['Type' => $kind, 'ID' => (int) $id, 'Status' => !empty($request['disabled']) ? 'Disabled' : 'Enabled']);
         } elseif ($action === 'add-semester') {
             $addedSem = addSemester($db, (string) ($request['schoolYear'] ?? ''), (string) ($request['semester'] ?? ''));
             writeAuditEvent($db, $account, 'system.semester_added', [
@@ -210,6 +219,7 @@ try {
     try {
         $records = readRecords($db, $isAdmin);
         $records['catalog'] = scholarshipCatalog($db);
+        $records['academicLists'] = academicLists($db);
         $lock = dataEntryLockStatus($db);
         $records['dataEntryLocked'] = $lock['locked'];
         $records['dataEntryLockReason'] = $lock['reason'];

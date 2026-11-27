@@ -61,6 +61,7 @@ require __DIR__ . '/config.php';
             <?php include 'views/scholars.php'; ?>
             <?php include 'views/scholarships.php'; ?>
             <?php include 'views/reports.php'; ?>
+            <?php if ($isAdmin) include 'views/system-settings.php'; ?>
             <?php if ($isAdmin) include 'views/activity.php'; ?>
             <?php if ($isAdmin) include 'views/settings.php'; ?>
         </div>

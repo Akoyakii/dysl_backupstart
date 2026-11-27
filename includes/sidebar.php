@@ -22,6 +22,8 @@
                 <?php if (isset($workspacePageTitle)): ?><a href="index#activity" class="nav">Audit Logs</a>
                 <?php else: ?><button type="button" data-view="activity" class="nav">Audit Logs</button><?php endif; ?>
                 <a href="/user-management" class="nav<?= ($workspaceActiveView ?? '') === 'user-management' ? ' active' : '' ?>"<?= ($workspaceActiveView ?? '') === 'user-management' ? ' aria-current="page"' : '' ?>>User Management</a>
+                <?php if (isset($workspacePageTitle)): ?><a href="index#system-settings" class="nav">System Settings</a>
+                <?php else: ?><button type="button" data-view="system-settings" class="nav">System Settings</button><?php endif; ?>
             <?php endif; ?>
             <?php if ($isAdmin): ?>
                 <?php if (isset($workspacePageTitle)): ?><a href="index#settings" class="nav">Settings</a>

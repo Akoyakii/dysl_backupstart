@@ -556,8 +556,8 @@ function editScholarAssignments(PDO $db, array $request): ?array
     $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
     validateScholarshipRules($names, $catalog, $existingHistory, $scholar['period'] ?? '', $maxResidency);
     validateScholarshipStatus($names, $validated['status'], $catalog);
-    if (array_key_exists('waivedAmount', $updated) && $updated['waivedAmount'] !== null && $updated['waivedAmount'] !== '' && (!hasTesOrTdp($names) || $validated['status'] !== 'Approved')) {
-        throw new InvalidArgumentException('Amount waived is available only for approved TES or TDP records.');
+    if (array_key_exists('waivedAmount', $updated) && $updated['waivedAmount'] !== null && $updated['waivedAmount'] !== '' && !hasTesOrTdp($names)) {
+        throw new InvalidArgumentException('Amount waived is available only for TES or TDP records.');
     }
 
     $assignmentsChanged = (bool) (array_diff($names, $originalNames) || array_diff($originalNames, $names));
@@ -655,8 +655,8 @@ function newScholarRecords(array $scholar, ?PDO $db = null): array
     $maxResidency = $db ? (int) (readSystemSettings($db)['maxResidencyYears'] ?? 5) : 5;
     validateScholarshipRules($names, $catalog, [], $period, $maxResidency);
     validateScholarshipStatus($names, $scholar['status'], $catalog);
-    if (isset($scholar['waivedAmount']) && (!hasTesOrTdp($names) || $scholar['status'] !== 'Approved')) {
-        throw new InvalidArgumentException('Amount waived is available only for approved TES or TDP records.');
+    if (isset($scholar['waivedAmount']) && !hasTesOrTdp($names)) {
+        throw new InvalidArgumentException('Amount waived is available only for TES or TDP records.');
     }
     $historyEntry = [
         'id' => $scholar['id'], 'name' => $scholar['name'], 'year' => $period,

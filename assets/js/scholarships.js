@@ -269,7 +269,7 @@ function updateSelectedScholarships(){
         const hasExternal = selected.some(name => byName.get(name)?.[1] === "External and Government Grants");
         const hasTesOrTdp = selected.some(name => name === "TES" || name === "TDP");
         const statusSelect = form.elements.namedItem("status");
-        if (waivedInput) waivedInput.closest("label")?.classList.toggle("hidden", !hasTesOrTdp || statusSelect?.value !== "Approved");
+        if (waivedInput) waivedInput.closest("label")?.classList.toggle("hidden", !hasTesOrTdp);
         const extRequiresApproval = window._systemSettings?.externalRequiresApproval !== "0";
         const inHouseDefault = window._systemSettings?.inHouseDefaultStatus || "Approved";
         if (statusSelect) {

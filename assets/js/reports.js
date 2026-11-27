@@ -31,13 +31,13 @@ function renderDashboardMetrics() {
     }
     const [approved, pending, rejected] = counts.values();
     const total = approved + pending + rejected;
-    const usage = scholarshipUsageEntries(discountHistory, "").slice(0, 5);
+    const usage = scholarshipUsageEntries(discountHistory, "").slice(0, 10);
 
     document.getElementById("dashboardStatusSummary").textContent = total
         ? `${approved} approved, ${pending} pending, ${rejected} not approved` : "No scholar decisions to show.";
     const chartAvailable = typeof Chart !== "undefined";
     document.getElementById("dashboardUsageSummary").textContent = usage.length
-        ? (chartAvailable ? "Top five programs by recorded scholarship assignments." : usage.map(([name, count]) => `${name} (${count})`).join(", "))
+        ? (chartAvailable ? "Top ten programs by recorded scholarship assignments." : usage.map(([name, count]) => `${name} (${count})`).join(", "))
         : "No scholarship assignments to show.";
 
     // Department breakdown
@@ -46,7 +46,7 @@ function renderDashboardMetrics() {
         const dept = (s.course || "").replace(/\s*[·•–—-]\s*\d+(?:st|nd|rd|th)\s+Year$/i, "").trim() || "Unknown";
         deptCounts[dept] = (deptCounts[dept] || 0) + 1;
     }
-    const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
     document.getElementById("dashboardDeptSummary").textContent = deptEntries.length
         ? `${Object.keys(deptCounts).length} college${Object.keys(deptCounts).length === 1 ? "" : "s"} with scholars.`
         : "No scholars to show.";
@@ -60,7 +60,7 @@ function renderDashboardMetrics() {
             coverageCounts[cov] = (coverageCounts[cov] || 0) + 1;
         }
     }
-    const coverageEntries = Object.entries(coverageCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const coverageEntries = Object.entries(coverageCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
     document.getElementById("dashboardCoverageSummary").textContent = coverageEntries.length
         ? `${coverageEntries.reduce((n, [, c]) => n + c, 0)} availments across ${coverageEntries.length} coverage types.`
         : "No availment records to show.";

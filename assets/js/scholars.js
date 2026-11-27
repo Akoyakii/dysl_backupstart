@@ -118,6 +118,7 @@ function openViewModal(id) {
     const studentHistory = discountHistory.filter(record => record.id === student.id);
     const {year, semester} = scholarPeriod(student, studentHistory);
     document.getElementById("viewPeriod").textContent = [year, semester].filter(Boolean).join(" · ") || "—";
+    renderViewTermTabs(student, studentHistory);
 
     const statusEl = document.getElementById("viewStatus");
     if (student.status === "Approved") {
@@ -167,6 +168,30 @@ function openViewModal(id) {
     }
     modal.classList.remove("hidden");
     modal.classList.add("flex");
+}
+
+function renderViewTermTabs(student, history, activeYear = null, activeTerm = null) {
+    const years = [...new Set(history.map(row => row.year).filter(Boolean))].sort().reverse();
+    const yearBox = document.getElementById("viewSchoolYears");
+    const semesterBox = document.getElementById("viewSemesters");
+    const details = document.getElementById("viewTermDetails");
+    if (!yearBox || !semesterBox || !details) return;
+    const legacyHistory = document.getElementById("viewDiscountHistory");
+    if (legacyHistory) legacyHistory.hidden = true;
+    const selectedYear = activeYear && years.includes(activeYear) ? activeYear : (years[0] || student.period || "—");
+    const terms = [...new Set(history.filter(row => row.year === selectedYear).map(row => row.semester).filter(Boolean))];
+    const selectedTerm = activeTerm && terms.includes(activeTerm) ? activeTerm : (terms[0] || "—");
+    yearBox.innerHTML = years.length ? `<span class="self-center text-xs font-bold text-slate-500">School year:</span>${years.map(year => `<button type="button" class="rounded-lg border px-3 py-1.5 text-xs font-bold ${year === selectedYear ? "bg-dyci-blue text-white" : ""}" data-view-term-year="${escapeHtml(year)}">${escapeHtml(year)}</button>`).join("")}` : "";
+    semesterBox.innerHTML = terms.length ? terms.map(term => `<button type="button" class="rounded-lg border px-4 py-1.5 text-xs font-bold ${term === selectedTerm ? "bg-dyci-blue text-white" : ""}" data-view-term-semester="${escapeHtml(term)}">${escapeHtml(term)}</button>`).join("") : "";
+    const record = history.find(row => row.year === selectedYear && row.semester === selectedTerm);
+    const names = record?.scholarships || scholarshipNames(student);
+    const external = names.filter(name => ["TES", "TDP"].includes(name));
+    const internal = names.filter(name => !external.includes(name) && !["District", "Provincial", "International"].some(type => name.startsWith(type)));
+    details.innerHTML = `<div class="grid gap-3 text-sm sm:grid-cols-3"><div><span class="block text-xs font-bold uppercase tracking-wide text-slate-500">External</span><span class="font-semibold">${escapeHtml(external.join(", ") || "—")}</span></div><div><span class="block text-xs font-bold uppercase tracking-wide text-slate-500">Internal</span><span class="font-semibold">${escapeHtml(internal.join(", ") || "—")}</span></div><div><span class="block text-xs font-bold uppercase tracking-wide text-slate-500">Amount</span><span class="font-semibold tabular-nums">${record?.waivedAmount != null ? `₱${Number(record.waivedAmount).toLocaleString("en-PH", {minimumFractionDigits: 2})}` : "—"}</span></div></div>`;
+    yearBox.querySelectorAll("[data-view-term-year]").forEach(button => button.addEventListener("click", () => renderViewTermTabs(student, history, button.dataset.viewTermYear, null)));
+    semesterBox.querySelectorAll("[data-view-term-semester]").forEach(button => button.addEventListener("click", () => {
+        renderViewTermTabs(student, history, selectedYear, button.dataset.viewTermSemester);
+    }));
 }
 
 async function decideScholar(status) {

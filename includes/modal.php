@@ -152,6 +152,9 @@
 
             <div>
                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Discount &amp; Scholarship History</span>
+                <div id="viewSchoolYears" class="mt-3 flex flex-wrap gap-2"></div>
+                <div id="viewSemesters" class="mt-2 flex flex-wrap gap-2"></div>
+                <div id="viewTermDetails" class="mt-3 rounded-xl border bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800"></div>
                 <div id="viewDiscountHistory" class="mt-2 overflow-x-auto rounded-xl border dark:border-slate-700"></div>
             </div>
         </div>

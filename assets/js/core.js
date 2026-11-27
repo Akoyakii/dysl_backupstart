@@ -385,7 +385,6 @@ function renderAll(){
     renderRenewalQueue();
     document.getElementById("statScholars").textContent = scholars.length;
     document.getElementById("dashboardScholarshipCount").textContent = window.scholarshipCatalog?.length || 0;
-    document.getElementById("dashboardDiscountCount").textContent = discountHistory.length;
     renderDashboardMetrics();
     updateDataLockBanner();
 }

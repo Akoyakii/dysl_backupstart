@@ -14,6 +14,7 @@ function startRequest(bool $loadGoogleFonts = false): void
     $fontStyles = $loadGoogleFonts ? ' https://fonts.googleapis.com' : '';
     $fontFiles = $loadGoogleFonts ? "font-src 'self' https://fonts.gstatic.com; " : '';
     header("Content-Security-Policy: default-src 'self'; script-src 'nonce-$nonce' 'strict-dynamic' 'unsafe-eval'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'$fontStyles; {$fontFiles}img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    header("Content-Security-Policy: default-src 'self'; script-src 'nonce-$nonce' 'strict-dynamic' 'unsafe-eval'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'$fontStyles; {$fontFiles}img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
     if (!$secure && preg_match('/^dysl\.byethost7\.com(?::(?:80|443))?$/iD', $_SERVER['HTTP_HOST'] ?? '')) {
         stopRequest(403, 'Use the HTTPS address to access ScholarHub.');

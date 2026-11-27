@@ -30,17 +30,7 @@ function renderDashboardMetrics() {
     }
     const [approved, pending, rejected] = counts.values();
     const total = approved + pending + rejected;
-    const decided = approved + rejected;
     const usage = scholarshipUsageEntries(discountHistory, "").slice(0, 5);
-    const years = [...new Set(discountHistory.map(r => r.year))].sort();
-
-    // Status cards
-    document.getElementById("dashboardApprovedCount").textContent = approved;
-    document.getElementById("dashboardApprovalRate").textContent = decided
-        ? `${Math.round(approved / decided * 100)}% of ${decided} decided` : "";
-    document.getElementById("dashboardPendingCount").textContent = pending;
-    document.getElementById("dashboardRejectedCount").textContent = rejected;
-    document.getElementById("dashboardYearCount").textContent = years.length;
 
     document.getElementById("dashboardStatusSummary").textContent = total
         ? `${approved} approved, ${pending} pending, ${rejected} not approved` : "No scholar decisions to show.";

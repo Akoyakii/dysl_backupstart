@@ -9,7 +9,7 @@
     <div class="mb-5 flex items-start justify-between gap-4"><div><h2 id="editScholarshipHeading" class="text-xl font-bold">Add scholarship type</h2><p class="mt-1 text-sm text-slate-500">Define the program, coverage, and benefit.</p></div><button type="button" data-click="resetScholarshipType" class="rounded-lg border px-3 py-1.5 text-sm font-semibold dark:border-slate-700">Close</button></div>
     <form id="scholarshipTypeForm" data-submit="submitScholarshipType" class="mt-4 grid gap-4 sm:grid-cols-2">
         <label class="text-sm font-semibold">Code / category
-            <select id="newScholarshipCategory" name="category" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"><option value="">Select code</option></select>
+            <select id="newScholarshipCategory" name="code" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"><option value="">Select code</option></select><input type="hidden" name="category" value="">
         </label>
         <label class="text-sm font-semibold">Scholarship name
             <input name="name" required maxlength="120" placeholder="Full program name" class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800">

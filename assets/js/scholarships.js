@@ -16,8 +16,8 @@ function updateScholarshipBenefitInput() {
     const amount = document.getElementById("scholarshipAmountValue");
     if (!percentage || !amount) return;
     const isPercentage = type === "percentage";
-    percentage.classList.toggle("hidden", !isPercentage); percentage.disabled = !isPercentage;
-    amount.classList.toggle("hidden", isPercentage); amount.disabled = isPercentage;
+    percentage.classList.toggle("hidden", !isPercentage); percentage.hidden = !isPercentage; percentage.disabled = !isPercentage;
+    amount.classList.toggle("hidden", isPercentage); amount.hidden = isPercentage; amount.disabled = isPercentage;
 }
 function openScholarshipCreate() {
     resetScholarshipType();
@@ -57,11 +57,11 @@ function renderScholarships(){
     const categories = options(1);
     const categorySelect = document.getElementById("newScholarshipCategory");
     if (categorySelect) {
-        const selectedCategory = categorySelect.value;
-        const codeByCategory = new Map();
-        window.scholarshipCatalog.forEach(item => { if (!codeByCategory.has(item[1])) codeByCategory.set(item[1], scholarshipCode(item[0]) || item[1]); });
-        categorySelect.innerHTML = `<option value="">Select code</option>` + categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(codeByCategory.get(category) || category)}</option>`).join("");
-        if (categories.includes(selectedCategory)) categorySelect.value = selectedCategory;
+        const selectedCode = categorySelect.value;
+        const codeCategories = new Map();
+        window.scholarshipCatalog.forEach(item => { const code = scholarshipCode(item[0]) || item[1]; if (!codeCategories.has(code)) codeCategories.set(code, item[1]); });
+        categorySelect.innerHTML = `<option value="">Select code</option>` + [...codeCategories].sort((a,b) => a[0].localeCompare(b[0])).map(([code]) => `<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`).join("");
+        if (codeCategories.has(selectedCode)) categorySelect.value = selectedCode;
     }
     const coverageBox = document.getElementById("scholarshipCoverageOptions");
     if (coverageBox && !coverageBox.childElementCount) coverageBox.innerHTML = Object.entries(scholarshipCoverageGroups).map(([group, values]) => {
@@ -164,6 +164,7 @@ function editScholarshipType(name) {
     fields.namedItem("name").value = type[0];
     fields.namedItem("name").readOnly = false;
     fields.namedItem("description").value = type[2] || "";
+    fields.namedItem("code").value = scholarshipCode(type[0]) || type[1];
     fields.namedItem("category").value = type[1];
     const coverage = String(type[3] || "").split(/\s*[·,+]\s*|\s*,\s*/).map(value => value.trim()).filter(Boolean);
     form.querySelectorAll('input[name="coverage[]"]').forEach(input => { input.checked = coverage.some(value => value.toLowerCase() === input.value.toLowerCase()); });
@@ -207,7 +208,9 @@ async function submitScholarshipType(event) {
     const displayName = String(type.name || "").trim();
     const coverage = [...form.querySelectorAll('input[name="coverage[]"]:checked')].map(input => input.value).join(", ");
     const benefitValue = String(type.benefitValue || "").trim();
-    const code = scholarshipCode(displayName) || [...(window.scholarshipCatalog || [])].find(item => item[1] === type.category)?.[0] || type.category;
+    const code = String(type.code || "").trim().toUpperCase();
+    const matchingCatalog = (window.scholarshipCatalog || []).find(item => scholarshipCode(item[0]) === code);
+    type.category = matchingCatalog?.[1] || type.category;
     type.name = editName || (displayName.toUpperCase().startsWith(String(code).toUpperCase() + " ") ? displayName : `${code} ${displayName}`.trim());
     type.coverage = coverage;
     type.benefit = type.benefitType === "percentage" ? `${benefitValue.replace(/%$/, "")}%` : benefitValue;

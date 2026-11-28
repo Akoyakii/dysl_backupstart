@@ -190,6 +190,6 @@ button:focus-visible, a:focus-visible { outline:2px solid #b07800; outline-offse
 }
 .scholar-workspace dialog { max-height:calc(100vh - 2rem); max-height:calc(100dvh - 2rem); }
 .scholar-workspace dialog:not([open]) { display:none; }
-.scholar-workspace dialog[open] { z-index:50; }
+.scholar-workspace dialog[open] { position:fixed; inset:0; z-index:50; margin:auto; }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>

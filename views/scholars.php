@@ -25,7 +25,7 @@
             <select id="scholarshipFilter" data-change="renderScholars" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"><option value="">All scholarships</option></select>
         </label>
     </div></div></section></div>
-    <div class="flex flex-wrap justify-end gap-3 border-t px-6 py-4 dark:border-slate-800"><button type="button" data-click="resetScholarFilters" class="rounded-xl border px-5 py-3 text-sm font-bold dark:border-slate-700">Reset</button><form method="dialog"><button type="submit" class="rounded-xl bg-dyci-blue px-6 py-3 text-sm font-bold text-white hover:bg-dyci-blueDark">Apply filters</button></form></div>
+    <div class="flex items-center justify-between gap-3 border-t px-6 py-4 dark:border-slate-800"><p class="text-xs text-slate-500">Filters update automatically.</p><button type="button" data-click="resetScholarFilters" class="rounded-xl border px-5 py-3 text-sm font-bold dark:border-slate-700">Reset filters</button></div>
 </dialog>
 <div class="overflow-hidden rounded-2xl border bg-white dark:border-slate-800 dark:bg-slate-900"><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200"><tr><th class="px-5 py-4">Student</th><th class="px-5 py-4">Course / Year</th><th class="px-5 py-4">Scholarship</th><th class="px-5 py-4">Status</th><th class="px-5 py-4">Updated</th><th class="px-5 py-4">Action</th></tr></thead><tbody id="scholarRows"></tbody></table></div><nav id="scholarPagination" aria-label="Student record pages" class="table-pagination" hidden></nav></div>
 

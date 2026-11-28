@@ -62,14 +62,12 @@ function renderScholarships(){
                 </div>
                 <div class="flex items-center gap-3"><span class="text-xs text-slate-500">${escapeHtml(s[4])}</span><span aria-hidden="true" class="text-slate-400 transition-transform group-open:rotate-180">⌄</span></div>
                 </summary>
-                <div class="border-t bg-slate-50/60 px-5 pb-5 pt-4 text-sm dark:border-slate-800 dark:bg-slate-800/30">
+                <div class="grid gap-4 border-t bg-slate-50/60 px-5 pb-5 pt-4 text-sm dark:border-slate-800 dark:bg-slate-800/30 md:grid-cols-[minmax(0,1fr)_auto]">
                     ${codeDesc ? `<p class="text-xs text-slate-500">${escapeHtml(codeDesc)}</p>` : ""}
                     <p class="mt-2 text-slate-600 dark:text-slate-300">${escapeHtml(s[2])}</p>
                     ${s[5] ? `<p class="mt-2 text-xs text-slate-400">${escapeHtml(s[5])}</p>` : ""}
                     <p class="mt-2 text-xs text-slate-500">Coverage: <b class="text-slate-700 dark:text-slate-200">${escapeHtml(s[3])}</b></p>
-                    ${canEdit ? `<button type="button" data-click="editScholarshipType" data-scholarship-name="${escapeHtml(s[0])}" aria-label="Edit ${escapeHtml(s[0])}" class="text-sm font-bold text-dyci-blue hover:underline dark:text-blue-400">Edit</button>
-                    <button type="button" data-click="toggleScholarshipDisabled" data-scholarship-name="${escapeHtml(s[0])}" data-disabled="${!isDisabled}" class="text-sm font-semibold text-slate-600 hover:underline dark:text-slate-300">${isDisabled ? "Enable" : "Disable"}</button>
-                    <button type="button" data-click="deleteScholarship" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-semibold text-rose-700 hover:underline dark:text-rose-300">Delete</button>` : ""}
+                    ${canEdit ? `<div class="flex flex-wrap items-center gap-2 md:justify-end"><button type="button" data-click="editScholarshipType" data-scholarship-name="${escapeHtml(s[0])}" aria-label="Edit ${escapeHtml(s[0])}" class="rounded-lg border border-dyci-blue/30 px-3 py-1.5 text-xs font-bold text-dyci-blue hover:bg-dyci-blue/5 dark:text-blue-300">Edit</button><button type="button" data-click="toggleScholarshipDisabled" data-scholarship-name="${escapeHtml(s[0])}" data-disabled="${!isDisabled}" class="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">${isDisabled ? "Enable" : "Disable"}</button><button type="button" data-click="deleteScholarship" data-scholarship-name="${escapeHtml(s[0])}" class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950">Delete</button></div>` : ""}
                 </div>
             </details>`;
         }).join("") || emptyScholarships();

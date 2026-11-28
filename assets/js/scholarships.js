@@ -1,5 +1,10 @@
 let scholarshipViewMode = "tile";
-const scholarshipCoverageOptions = ["Tuition", "Miscellaneous", "Laboratory", "Lab per Unit", "Lab per Hour", "Other Fees", "General / Other"];
+const scholarshipCoverageGroups = {
+    "Tuition": ["Tuition"],
+    "Laboratory": ["Lab Fees", "Lab per Unit"],
+    "Miscellaneous": ["Miscellaneous"],
+    "Other Fees": ["AUTOMATION FEE", "BULPRISA", "CULTURAL FEE", "BREAKAGE/LOSSES", "ENERGY FEE", "STUDENT COUNCIL FEE", "PUBLICATION", "REGISTRATION FEE", "LMS FEE", "PRISAA"]
+};
 const scholarshipCode = name => String(name || "").match(/^[A-Za-z]+/)?.[0] || "";
 const scholarshipBenefitParts = benefit => /%$/.test(String(benefit || "").trim())
     ? {type: "percentage", value: String(benefit).trim().replace(/%$/, "")}
@@ -59,7 +64,10 @@ function renderScholarships(){
         if (categories.includes(selectedCategory)) categorySelect.value = selectedCategory;
     }
     const coverageBox = document.getElementById("scholarshipCoverageOptions");
-    if (coverageBox && !coverageBox.childElementCount) coverageBox.innerHTML = scholarshipCoverageOptions.map(value => `<label class="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold dark:border-slate-700"><input type="checkbox" name="coverage[]" value="${escapeHtml(value)}"> <span>${escapeHtml(value)}</span></label>`).join("");
+    if (coverageBox && !coverageBox.childElementCount) coverageBox.innerHTML = Object.entries(scholarshipCoverageGroups).map(([group, values]) => {
+        if (values.length === 1) return `<label class="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold dark:border-slate-700"><input type="checkbox" name="coverage[]" value="${escapeHtml(values[0])}"> <span>${escapeHtml(group)}</span></label>`;
+        return `<details class="rounded-lg border dark:border-slate-700"><summary class="cursor-pointer px-3 py-2 text-xs font-semibold">${escapeHtml(group)}</summary><div class="grid gap-2 border-t p-3 dark:border-slate-700">${values.map(value => `<label class="flex items-center gap-2 text-xs"><input type="checkbox" name="coverage[]" value="${escapeHtml(value)}"> <span>${escapeHtml(value)}</span></label>`).join("")}</div></details>`;
+    }).join("");
     const percentageSelect = document.getElementById("scholarshipPercentageValue");
     if (percentageSelect && !percentageSelect.childElementCount) percentageSelect.innerHTML = `<option value="">Select percentage</option>` + [10,20,25,30,40,50,60,75,100].map(value => `<option value="${value}">${value}%</option>`).join("");
     const filter = updateSelectOptions("scholarshipFilter", "All categories", categories);

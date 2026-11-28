@@ -40,18 +40,21 @@ function renderScholars(){
     }));
     const years = [...new Set(entries.map(entry => entry.year).filter(Boolean))].sort().reverse();
     const departments = [...new Set(entries.map(entry => entry.department).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const scholarshipTypes = [...new Set(entries.flatMap(entry => scholarshipNames(entry.scholar)).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const year = updateSelectOptions("scholarYear", "All school years", years);
     const department = updateSelectOptions("scholarDepartment", "All colleges / departments", departments);
+    const selectedScholarshipType = updateSelectOptions("scholarshipTypeFilter", "All scholarship types", scholarshipTypes);
     const matches = entries.filter(entry =>
         (!year || entry.year === year) && (!semester || entry.semester === semester) &&
         (!department || entry.department === department) &&
+        (!selectedScholarshipType || scholarshipNames(entry.scholar).includes(selectedScholarshipType)) &&
         (status === "All Status" || entry.scholar.status === status) &&
         [entry.scholar.name, entry.scholar.id, entry.scholar.course, ...scholarshipNames(entry.scholar)]
             .join(" ").toLowerCase().includes(query)
     );
     
     const canEdit = Boolean(document.getElementById("scholarForm"));
-    const page = tablePage("scholarPagination", matches, [query, status, semester, year, department], renderScholars);
+    const page = tablePage("scholarPagination", matches, [query, status, semester, year, department, selectedScholarshipType], renderScholars);
     document.getElementById("scholarRows").innerHTML = page.map(({scholar: s, year, semester}) => {
         let names = scholarshipNames(s);
         
@@ -96,7 +99,7 @@ function renderRecent(){
 
 function openRecentScholar(id) {
     document.getElementById("search").value = id;
-    for (const filter of ["scholarYear", "scholarSemester", "scholarDepartment"]) {
+    for (const filter of ["scholarYear", "scholarSemester", "scholarDepartment", "scholarshipTypeFilter"]) {
         document.getElementById(filter).value = "";
     }
     document.getElementById("filter").value = "All Status";
@@ -191,13 +194,13 @@ function renderViewTermTabs(student, history, activeYear = null, activeTerm = nu
     yearBox.onchange = () => renderViewTermTabs(student, history, yearBox.value, null);
     const order = {"1st Semester": 1, "2nd Semester": 2, "Summer": 3};
     terms.sort((a, b) => (order[a] || 99) - (order[b] || 99));
-    semesterBox.innerHTML = terms.length ? terms.map(term => `<button type="button" class="rounded-lg border px-4 py-1.5 text-xs font-bold ${term === selectedTerm ? "bg-dyci-blue text-white" : ""}" data-view-term-semester="${escapeHtml(term)}">${escapeHtml(term.replace(/\s+Semester$/i, ""))}</button>`).join("") : "";
+    semesterBox.innerHTML = terms.length ? terms.map(term => `<button type="button" class="rounded-xl border px-5 py-2 text-sm font-bold transition-colors ${term === selectedTerm ? "bg-dyci-blue text-white shadow-sm" : "bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"}" data-view-term-semester="${escapeHtml(term)}">${escapeHtml(term.replace(/\s+Semester$/i, ""))}</button>`).join("") : "";
     const record = history.find(row => row.year === selectedYear && row.semester === selectedTerm);
     const names = record?.scholarships || scholarshipNames(student);
     const external = names.filter(name => ["TES", "TDP"].includes(name));
     const internal = names.filter(name => !external.includes(name) && !/^(District|Provincial|International)/i.test(name));
     const amount = record?.waivedAmount != null ? "₱" + Number(record.waivedAmount).toLocaleString("en-PH", {minimumFractionDigits: 2}) : "—";
-    details.innerHTML = `<div class="divide-y text-sm dark:divide-slate-700"><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">External:</span><span class="text-right font-bold">${escapeHtml(external.join(", ") || "—")}<small class="mt-1 block font-semibold text-amber-600">${escapeHtml(record?.status || student.status || "")}</small></span></div><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">Internal:</span><span class="text-right font-bold">${escapeHtml(internal.join(", ") || "—")}</span></div><div class="flex items-center justify-between gap-4 py-3"><span class="font-semibold text-slate-500">Amount:</span><span class="text-right font-bold tabular-nums">${escapeHtml(amount)}</span></div></div>`;
+    details.innerHTML = `<div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-800/50"><div class="divide-y divide-slate-200 dark:divide-slate-700"><div class="flex items-start justify-between gap-4 py-3 first:pt-0"><span class="font-semibold text-slate-500">External:</span><span class="text-right font-bold">${escapeHtml(external.join(", ") || "—")}<small class="mt-1 block font-semibold text-amber-600">${escapeHtml(record?.status || student.status || "")}</small></span></div>${internal.length ? `<div class="flex items-start justify-between gap-4 py-3"><span class="font-semibold text-slate-500">Internal:</span><span class="text-right font-bold">${escapeHtml(internal.join(", "))}</span></div>` : ""}<div class="flex items-start justify-between gap-4 py-3 last:pb-0"><span class="font-semibold text-slate-500">Amount:</span><span class="text-right font-bold tabular-nums">${escapeHtml(amount)}</span></div></div></div>`;
     yearBox.querySelectorAll("[data-view-term-year]").forEach(button => button.addEventListener("click", () => renderViewTermTabs(student, history, button.dataset.viewTermYear, null)));
     semesterBox.querySelectorAll("[data-view-term-semester]").forEach(button => button.addEventListener("click", () => {
         renderViewTermTabs(student, history, selectedYear, button.dataset.viewTermSemester);

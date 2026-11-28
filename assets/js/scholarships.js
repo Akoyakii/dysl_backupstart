@@ -31,7 +31,9 @@ function renderScholarships(){
     );
     
     document.getElementById("scholarshipCount").textContent = results.length;
-    const page = tablePage("scholarshipLibraryPagination", results, [q, filter], renderScholarships);
+    const page = scholarshipViewMode === "list" ? tablePage("scholarshipLibraryPagination", results, [q, filter], renderScholarships) : results;
+    const pagination = document.getElementById("scholarshipLibraryPagination");
+    if (pagination && scholarshipViewMode === "tile") pagination.hidden = true;
     
     // Initialize view mode buttons on first render
     if (!document.getElementById("scholarshipViewTile").classList.contains("bg-dyci-blue") &&

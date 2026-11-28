@@ -55,6 +55,7 @@ function bindRecordControls() {
             openRecentScholar: (_event, button) => openRecentScholar(button.dataset.studentId),
             openScholarshipUsage: (_event, button) => openScholarshipUsage(button.dataset.scholarshipName),
             openScholarFilters,
+            resetScholarFilters,
             openAuditDetails: (_event, button) => openAuditDetails(Number(button.dataset.auditIndex), button.dataset.auditLabel),
             exportScholarshipUsage,
             openViewModal: (_event, button) => openViewModal(button.dataset.studentId),

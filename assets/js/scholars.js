@@ -95,6 +95,14 @@ function openScholarFilters() {
     document.getElementById("scholarFiltersDialog")?.showModal();
 }
 
+function resetScholarFilters() {
+    ["scholarYear", "scholarSemester", "scholarDepartment", "scholarshipFilter"].forEach(id => { const control = document.getElementById(id); if (control) control.value = ""; });
+    const status = document.getElementById("filter"); if (status) status.value = "All Status";
+    const sort = document.getElementById("scholarSort"); if (sort) sort.value = "name";
+    const order = document.getElementById("scholarOrder"); if (order) order.value = "asc";
+    renderScholars();
+}
+
 function scholarStatus(status) {
     const colors = {
         Approved: "text-emerald-800 dark:text-emerald-300",

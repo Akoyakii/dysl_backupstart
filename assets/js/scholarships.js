@@ -1,4 +1,9 @@
 let scholarshipViewMode = "tile";
+const scholarshipCoverageOptions = ["Tuition", "Miscellaneous", "Laboratory", "Lab per Unit", "Lab per Hour", "Other Fees", "General / Other"];
+const scholarshipCode = name => String(name || "").match(/^[A-Za-z]+/)?.[0] || "";
+const scholarshipBenefitParts = benefit => /%$/.test(String(benefit || "").trim())
+    ? {type: "percentage", value: String(benefit).trim().replace(/%$/, "")}
+    : {type: "amount", value: String(benefit || "")};
 const scholarshipDescriptions = {TES: "Government tuition assistance for approved beneficiaries under the Tertiary Education Subsidy program.", TDP: "Government educational assistance for approved beneficiaries under the Tulong Dunong Program.", DISSF: "An in-house scholarship that reduces eligible tuition, miscellaneous, laboratory, or other school fees.", EMP: "A dependent discount for qualified employees' spouses, children, or siblings.", DYH: "A dependent discount for qualified Dr. Yanga Hospital employees.", SA: "A student assistant arrangement with a fixed per-term payment; college fees are excluded.", PWD: "A tuition discount for students with a valid regular PWD identification card.", ENT: "An entrance scholarship for qualified Grade 12 graduates, subject to continued eligibility rules.", "Full Acad": "A full academic tuition scholarship for students who meet the Dean's List and GWA requirements.", "Half Acad": "A partial academic tuition scholarship for students who meet the two-time Dean's List and GWA requirements."};
 
 function scholarshipDescription(name, provided = "") {
@@ -29,8 +34,8 @@ function renderScholarships(){
         .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
     const categories = options(1);
     updateSelectOptions("newScholarshipCategory", "Select category", categories);
-    updateSelectOptions("newScholarshipCoverage", "Select coverage", options(3));
-    updateSelectOptions("newScholarshipBenefit", "Select benefit or rate", options(4));
+    const coverageBox = document.getElementById("scholarshipCoverageOptions");
+    if (coverageBox && !coverageBox.childElementCount) coverageBox.innerHTML = scholarshipCoverageOptions.map(value => `<label class="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold dark:border-slate-700"><input type="checkbox" name="coverage[]" value="${escapeHtml(value)}"> <span>${escapeHtml(value)}</span></label>`).join("");
     const filter = updateSelectOptions("scholarshipFilter", "All categories", categories);
     
     const results = window.scholarshipCatalog.filter(s => 
@@ -55,7 +60,7 @@ function renderScholarships(){
     if (scholarshipViewMode === "list") {
         container.className = "divide-y overflow-hidden rounded-2xl border bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900";
         container.innerHTML = page.map(s => {
-            const codeDesc = scholarshipDescription(s[0], s[5]);
+            const codeDesc = scholarshipDescription(s[0], s[2]);
             const isDisabled = Boolean(s[6]);
             return `<details class="group ${isDisabled ? "opacity-60" : ""}">
                 <summary class="grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden dark:hover:bg-slate-800/60">
@@ -94,7 +99,7 @@ function renderScholarships(){
                 return `<article class="rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-dyci-blue/40 dark:border-slate-700 dark:bg-slate-900 ${isDisabled ? "opacity-60" : ""}">
                     <div class="flex items-start justify-between gap-3"><div><h3 class="font-bold">${escapeHtml(s[0])}</h3><p class="text-xs text-slate-500">${escapeHtml(s[1])}</p></div><span class="tabular-nums text-sm font-bold text-dyci-blue dark:text-blue-300">${escapeHtml(s[4])}</span></div>
                     <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">${escapeHtml(s[2])}</p><p class="mt-2 text-xs text-slate-500">Coverage: <b>${escapeHtml(s[3])}</b></p>
-                    <p class="mt-2 text-xs text-slate-500">${escapeHtml(scholarshipDescription(s[0], s[5]))}</p>
+                    <p class="mt-2 text-xs text-slate-500">${escapeHtml(scholarshipDescription(s[0], s[2]))}</p>
                     ${canEdit ? `<div class="mt-3 flex flex-wrap gap-3"><button type="button" data-click="editScholarshipType" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-bold text-dyci-blue hover:underline dark:text-blue-400">Edit</button><button type="button" data-click="deleteScholarship" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-semibold text-rose-700 hover:underline dark:text-rose-300">Delete</button></div>` : ""}
                 </article>`;
             }).join("")}</div>
@@ -122,11 +127,16 @@ function editScholarshipType(name) {
     };
     const fields = form.elements;
     form.dataset.editName = type[0];
+    fields.namedItem("code").value = scholarshipCode(type[0]);
     fields.namedItem("name").value = type[0];
-    fields.namedItem("name").readOnly = true;
+    fields.namedItem("name").readOnly = false;
+    fields.namedItem("description").value = type[2] || "";
     fields.namedItem("category").value = type[1];
-    fields.namedItem("coverage").value = type[3];
-    fields.namedItem("benefit").value = type[4];
+    const coverage = String(type[3] || "").split(/\s*[·,+]\s*|\s*,\s*/).map(value => value.trim()).filter(Boolean);
+    form.querySelectorAll('input[name="coverage[]"]').forEach(input => { input.checked = coverage.some(value => value.toLowerCase() === input.value.toLowerCase()); });
+    const benefit = scholarshipBenefitParts(type[4]);
+    fields.namedItem("benefitType").value = benefit.type;
+    fields.namedItem("benefitValue").value = benefit.value;
     form.querySelector('[type="submit"]').textContent = "Save changes";
     document.getElementById("cancelScholarshipEdit").hidden = false;
     dialog.showModal();
@@ -157,7 +167,16 @@ async function submitScholarshipType(event) {
     const button = form.querySelector('button[type="submit"]');
     if (button.disabled) return;
     const editName = form.dataset.editName;
-    const type = Object.fromEntries(new FormData(form));
+    const formData = new FormData(form);
+    const type = Object.fromEntries(formData);
+    const code = String(type.code || "").trim().toUpperCase();
+    const displayName = String(type.name || "").trim();
+    const coverage = [...form.querySelectorAll('input[name="coverage[]"]:checked')].map(input => input.value).join(", ");
+    const benefitValue = String(type.benefitValue || "").trim();
+    type.name = editName || (code && displayName.toUpperCase().startsWith(code + " ") ? displayName : `${code} ${displayName}`.trim());
+    type.coverage = coverage;
+    type.benefit = type.benefitType === "percentage" ? `${benefitValue.replace(/%$/, "")}%` : benefitValue;
+    delete type.code; delete type.benefitType; delete type.benefitValue; delete type["coverage[]"];
     const errorBox = document.getElementById("scholarshipTypeError");
     errorBox.hidden = true;
     const label = button.textContent;

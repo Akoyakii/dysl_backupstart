@@ -6,18 +6,25 @@
 <?php if ($canManageRecords): ?>
 <details id="addScholarshipPanel" class="mb-5 rounded-2xl border bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
     <summary class="cursor-pointer font-bold text-dyci-blue dark:text-blue-300">Add scholarship type</summary>
-    <form id="scholarshipTypeForm" data-submit="submitScholarshipType" class="mt-4 grid gap-3 sm:grid-cols-2">
-        <label class="text-sm font-semibold">Scholarship name
-            <input name="name" required maxlength="120" class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
+    <form id="scholarshipTypeForm" data-submit="submitScholarshipType" class="mt-4 grid gap-4 sm:grid-cols-2">
+        <label class="text-sm font-semibold">Code / category
+            <input name="code" required maxlength="24" placeholder="e.g. TES or DISSF" class="mt-1 block w-full rounded-xl border px-3 py-2 uppercase dark:border-slate-700 dark:bg-slate-800">
         </label>
-        <label class="text-sm font-semibold">Category
+        <label class="text-sm font-semibold">Scholarship name
+            <input name="name" required maxlength="120" placeholder="Full program name" class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
+        </label>
+        <label class="text-sm font-semibold sm:col-span-2">Description
+            <textarea name="description" required maxlength="1000" rows="2" placeholder="What this scholarship provides and who it is for" class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"></textarea>
+        </label>
+        <label class="text-sm font-semibold">System category
             <select id="newScholarshipCategory" name="category" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"><option value="">Select category</option></select>
         </label>
-        <label class="text-sm font-semibold">Coverage
-            <select id="newScholarshipCoverage" name="coverage" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"><option value="">Select coverage</option></select>
+        <fieldset class="sm:col-span-2"><legend class="text-sm font-semibold">Coverage</legend><div id="scholarshipCoverageOptions" class="mt-2 grid gap-2 sm:grid-cols-3"></div></fieldset>
+        <label class="text-sm font-semibold">Benefit type
+            <select name="benefitType" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"><option value="percentage">Percentage</option><option value="amount">Fixed amount</option></select>
         </label>
-        <label class="text-sm font-semibold">Benefit or rate
-            <select id="newScholarshipBenefit" name="benefit" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"><option value="">Select benefit or rate</option></select>
+        <label class="text-sm font-semibold">Benefit / rate
+            <input name="benefitValue" required maxlength="80" placeholder="e.g. 50 or ₱4,000 per term" class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
         </label>
         <p id="scholarshipTypeError" role="alert" class="text-sm text-rose-700 dark:text-rose-300 sm:col-span-2" hidden></p>
         <div class="flex flex-wrap gap-3 sm:col-span-2">

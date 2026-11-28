@@ -145,10 +145,11 @@ function scholarshipCatalog(?PDO $db = null): array
     }
     unset($entry);
     if ($db) {
-        foreach ($db->query('SELECT name, category, coverage, benefit, disabled FROM scholarship_types ORDER BY name') as $row) {
+        foreach ($db->query('SELECT name, category, description, coverage, benefit, disabled FROM scholarship_types ORDER BY name') as $row) {
             $original = $byName[$row['name']] ?? null;
-            $description = $original && $original[3] === $row['coverage'] && $original[4] === $row['benefit']
-                ? $original[2] : $row['coverage'];
+            $description = trim((string) ($row['description'] ?? '')) !== ''
+                ? $row['description']
+                : ($original && $original[3] === $row['coverage'] && $original[4] === $row['benefit'] ? $original[2] : $row['coverage']);
             $byName[$row['name']] = [
                 $row['name'],
                 $row['category'],
@@ -211,10 +212,10 @@ function toggleScholarshipTypeDisabled(PDO $db, string $name, bool $disabled): a
     if (!$item) {
         throw new DomainException('The scholarship type could not be found.');
     }
-    $stmt = $db->prepare('INSERT INTO scholarship_types (name, category, coverage, benefit, disabled) VALUES (?, ?, ?, ?, ?)
+    $stmt = $db->prepare('INSERT INTO scholarship_types (name, category, description, coverage, benefit, disabled) VALUES (?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE disabled = ?');
     $flag = $disabled ? 1 : 0;
-    $stmt->execute([$item[0], $item[1], $item[3], $item[4], $flag, $flag]);
+    $stmt->execute([$item[0], $item[1], $item[2], $item[3], $item[4], $flag, $flag]);
     return ['Scholarship' => $item[0], 'Status' => $disabled ? 'Disabled' : 'Enabled'];
 }
 
@@ -313,7 +314,7 @@ function validateScholarshipStatus(array $names, string $status, array $catalog)
 function saveScholarshipType(PDO $db, array $type, bool $editing = false): ?array
 {
     $values = [];
-    foreach (['name' => 120, 'category' => 80, 'coverage' => 255, 'benefit' => 100] as $field => $limit) {
+    foreach (['name' => 120, 'category' => 80, 'description' => 1000, 'coverage' => 255, 'benefit' => 100] as $field => $limit) {
         $value = is_string($type[$field] ?? null) ? trim($type[$field]) : '';
         if (!preg_match('/\A[^\x00-\x1F\x7F]{1,' . $limit . '}\z/u', $value) ||
             ($field === 'name' && strlen($value) > 255)) {
@@ -326,26 +327,21 @@ function saveScholarshipType(PDO $db, array $type, bool $editing = false): ?arra
     if ($editing && (!$original || $type['name'] !== $original[0])) {
         throw new DomainException('The scholarship type could not be found.');
     }
-    foreach (['category' => 1, 'coverage' => 3, 'benefit' => 4] as $field => $column) {
-        if (!in_array($values[$field], array_column($catalog, $column), true)) {
-            throw new InvalidArgumentException('Select an available scholarship ' . $field . '.');
-        }
-    }
     foreach ($editing ? [] : $catalog as $item) {
         if (strcasecmp($item[0], $values['name']) === 0) {
             throw new DomainException('A scholarship with that name already exists.');
         }
     }
     if ($editing) {
-        $before = ['Category' => $original[1], 'Coverage' => $original[3], 'Benefit' => $original[4]];
-        $after = ['Category' => $values['category'], 'Coverage' => $values['coverage'], 'Benefit' => $values['benefit']];
+        $before = ['Category' => $original[1], 'Description' => $original[2], 'Coverage' => $original[3], 'Benefit' => $original[4]];
+        $after = ['Category' => $values['category'], 'Description' => $values['description'], 'Coverage' => $values['coverage'], 'Benefit' => $values['benefit']];
         if ($before === $after) return null;
-        $save = $db->prepare('INSERT INTO scholarship_types (name, category, coverage, benefit) VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE category = ?, coverage = ?, benefit = ?');
+        $save = $db->prepare('INSERT INTO scholarship_types (name, category, description, coverage, benefit) VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE category = ?, description = ?, coverage = ?, benefit = ?');
         $save->execute([...array_values($values), ...array_values($after)]);
         return ['Scholarship' => $values['name'], 'before' => $before, 'after' => $after];
     }
-    $save = $db->prepare('INSERT INTO scholarship_types (name, category, coverage, benefit) VALUES (?, ?, ?, ?)');
+    $save = $db->prepare('INSERT INTO scholarship_types (name, category, description, coverage, benefit) VALUES (?, ?, ?, ?, ?)');
     $save->execute(array_values($values));
     return $values;
 }

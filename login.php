@@ -30,6 +30,7 @@ if ($method === 'GET' && isset($_GET['waiting'])) {
 
 try {
     $db = recordsDatabase();
+    $activeSchoolYear = readSystemSettings($db)['activeSchoolYear'] ?: currentSchoolYear($db);
     if (!requestLimit($db, 'login', 60, 60)) {
         stopRequest(429, 'Too many requests. Try again shortly.');
     }
@@ -316,7 +317,7 @@ $heroSlides = [$heroSlides[0]];
         </div>
         <div class="inline-flex shrink-0 items-center gap-2 rounded-full border border-dyci-gold/40 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm sm:px-5" aria-label="Admissions status">
             <span class="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]"></span>
-            <span>Admissions Open A.Y. 2025–2026</span>
+            <span>Admissions Open A.Y. <?= htmlspecialchars($activeSchoolYear, ENT_QUOTES, 'UTF-8') ?></span>
         </div>
     </div>
 </header>

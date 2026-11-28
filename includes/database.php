@@ -325,12 +325,13 @@ function saveScholarshipType(PDO $db, array $type, bool $editing = false): ?arra
         $values[$field] = $value;
     }
     $catalog = scholarshipCatalog($db);
-    $original = array_column($catalog, null, 0)[$values['name']] ?? null;
-    if ($editing && (!$original || $type['name'] !== $original[0])) {
+    $originalName = is_string($type['originalName'] ?? null) ? trim($type['originalName']) : $values['name'];
+    $original = array_column($catalog, null, 0)[$originalName] ?? null;
+    if ($editing && !$original) {
         throw new DomainException('The scholarship type could not be found.');
     }
-    foreach ($editing ? [] : $catalog as $item) {
-        if (strcasecmp($item[0], $values['name']) === 0) {
+    foreach ($catalog as $item) {
+        if (strcasecmp($item[0], $values['name']) === 0 && (!$editing || strcasecmp($item[0], $originalName) !== 0)) {
             throw new DomainException('A scholarship with that name already exists.');
         }
     }
@@ -338,9 +339,8 @@ function saveScholarshipType(PDO $db, array $type, bool $editing = false): ?arra
         $before = ['Category' => $original[1], 'Description' => $original[2], 'Coverage' => $original[3], 'Benefit' => $original[4]];
         $after = ['Category' => $values['category'], 'Description' => $values['description'], 'Coverage' => $values['coverage'], 'Benefit' => $values['benefit']];
         if ($before === $after) return null;
-        $save = $db->prepare('INSERT INTO scholarship_types (name, category, description, coverage, benefit) VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE category = ?, description = ?, coverage = ?, benefit = ?');
-        $save->execute([...array_values($values), ...array_values($after)]);
+        $save = $db->prepare('UPDATE scholarship_types SET name = ?, category = ?, description = ?, coverage = ?, benefit = ? WHERE name = ?');
+        $save->execute([$values['name'], $values['category'], $values['description'], $values['coverage'], $values['benefit'], $originalName]);
         return ['Scholarship' => $values['name'], 'before' => $before, 'after' => $after];
     }
     $save = $db->prepare('INSERT INTO scholarship_types (name, category, description, coverage, benefit) VALUES (?, ?, ?, ?, ?)');

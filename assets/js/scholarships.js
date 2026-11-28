@@ -56,7 +56,7 @@ function renderScholarships(){
         .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
     const categories = options(1);
     const categorySelect = document.getElementById("newScholarshipCategory");
-    if (categorySelect) {
+    if (categorySelect && categorySelect.tagName === "SELECT") {
         const selectedCode = categorySelect.value;
         const codeCategories = new Map();
         window.scholarshipCatalog.forEach(item => { const code = scholarshipCode(item[0]) || item[1]; if (!codeCategories.has(code)) codeCategories.set(code, item[1]); });
@@ -132,8 +132,8 @@ function renderScholarships(){
                 const isDisabled = Boolean(s[6]);
                 return `<article class="rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-dyci-blue/40 dark:border-slate-700 dark:bg-slate-900 ${isDisabled ? "opacity-60" : ""}">
                     <div class="flex items-start justify-between gap-3"><div><h3 class="font-bold">${escapeHtml(s[0])}</h3><p class="text-xs text-slate-500">${escapeHtml(s[1])}</p></div><span class="tabular-nums text-sm font-bold text-dyci-blue dark:text-blue-300">${escapeHtml(s[4])}</span></div>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">${escapeHtml(s[2])}</p><p class="mt-2 text-xs text-slate-500">Coverage: <b>${escapeHtml(s[3])}</b></p>
-                    <p class="mt-2 text-xs text-slate-500">${escapeHtml(scholarshipDescription(s[0], s[2]))}</p>
+                    <p class="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">${escapeHtml(s[2])}</p>
+                    <p class="mt-3 text-xs text-slate-500">Coverage: <b class="text-slate-700 dark:text-slate-200">${escapeHtml(s[3])}</b></p>
                     ${canEdit ? `<div class="mt-3 flex flex-wrap gap-3"><button type="button" data-click="editScholarshipType" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-bold text-dyci-blue hover:underline dark:text-blue-400">Edit</button><button type="button" data-click="deleteScholarship" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-semibold text-rose-700 hover:underline dark:text-rose-300">Delete</button></div>` : ""}
                 </article>`;
             }).join("")}</div>
@@ -161,7 +161,7 @@ function editScholarshipType(name) {
     };
     const fields = form.elements;
     form.dataset.editName = type[0];
-    fields.namedItem("name").value = type[0];
+    fields.namedItem("name").value = type[0].replace(new RegExp(`^${scholarshipCode(type[0])}\\s*`, "i"), "");
     fields.namedItem("name").readOnly = false;
     fields.namedItem("description").value = type[2] || "";
     fields.namedItem("code").value = scholarshipCode(type[0]) || type[1];
@@ -210,8 +210,8 @@ async function submitScholarshipType(event) {
     const benefitValue = String(type.benefitValue || "").trim();
     const code = String(type.code || "").trim().toUpperCase();
     const matchingCatalog = (window.scholarshipCatalog || []).find(item => scholarshipCode(item[0]) === code);
-    type.category = matchingCatalog?.[1] || type.category;
-    type.name = editName || (displayName.toUpperCase().startsWith(String(code).toUpperCase() + " ") ? displayName : `${code} ${displayName}`.trim());
+    type.category = matchingCatalog?.[1] || code;
+    type.name = (displayName.toUpperCase().startsWith(String(code).toUpperCase() + " ") ? displayName : `${code} ${displayName}`).trim();
     type.coverage = coverage;
     type.benefit = type.benefitType === "percentage" ? `${benefitValue.replace(/%$/, "")}%` : benefitValue;
     delete type.code; delete type.benefitType; delete type.benefitValue; delete type["coverage[]"];
@@ -223,7 +223,7 @@ async function submitScholarshipType(event) {
     document.getElementById("cancelScholarshipEdit").disabled = true;
     try {
         await requestRecords({action: editName ? "edit-scholarship" : "add-scholarship",
-            type: editName ? {...type, name: editName} : type});
+            type: editName ? {...type, originalName: editName} : type});
         resetScholarshipType();
         if (!editName) {
             document.getElementById("addScholarshipPanel").open = false;

@@ -46,16 +46,17 @@ function renderScholarships(){
     const container = document.getElementById("scholarshipCards");
 
     if (scholarshipViewMode === "list") {
-        container.className = "space-y-2";
+        container.className = "overflow-hidden rounded-2xl border bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900";
         container.innerHTML = page.map(s => {
             const codeDesc = scholarshipCodeDescription(s[0]);
             const isDisabled = Boolean(s[6]);
-            return `<details class="group rounded-xl border bg-white dark:border-slate-800 dark:bg-slate-900 ${isDisabled ? "opacity-60" : ""}">
-                <summary class="flex cursor-pointer list-none flex-wrap items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+            return `<details class="group border-b last:border-b-0 dark:border-slate-800 ${isDisabled ? "opacity-60" : ""}">
+                <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden dark:hover:bg-slate-800/60">
+                <span class="flex h-9 w-12 shrink-0 items-center justify-center rounded-lg bg-dyci-blue/10 text-xs font-black tracking-wide text-dyci-blue dark:bg-dyci-blue/20 dark:text-blue-300">${escapeHtml(s[0].replace(/\s*\d.*$/, "").slice(0, 8))}</span>
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-baseline gap-2">
-                        <span class="font-bold">${escapeHtml(s[0])}</span>
-                        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">${escapeHtml(s[1])}</span>
+                        <span class="truncate font-bold">${escapeHtml(s[0])}</span>
+                        <span class="text-xs text-slate-500">${escapeHtml(s[1])}</span>
                         ${isDisabled ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">Disabled</span>` : ""}
                     </div>
                 </div>

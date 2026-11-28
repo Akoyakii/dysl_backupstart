@@ -169,7 +169,8 @@ function editScholarshipType(name) {
     form.querySelectorAll('input[name="coverage[]"]').forEach(input => { input.checked = coverage.some(value => value.toLowerCase() === input.value.toLowerCase()); });
     const benefit = scholarshipBenefitParts(type[4]);
     fields.namedItem("benefitType").value = benefit.type;
-    fields.namedItem("benefitValue").value = benefit.value;
+    document.getElementById("scholarshipPercentageValue").value = benefit.type === "percentage" ? benefit.value : "";
+    document.getElementById("scholarshipAmountValue").value = benefit.type === "amount" ? benefit.value : "";
     form.querySelector('[type="submit"]').textContent = "Save changes";
     document.getElementById("cancelScholarshipEdit").hidden = false;
     dialog.showModal();

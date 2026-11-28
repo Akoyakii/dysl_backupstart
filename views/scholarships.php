@@ -22,7 +22,7 @@
             <select name="benefitType" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"><option value="percentage">Percentage</option><option value="amount">Fixed amount</option></select>
         </label>
         <label class="text-sm font-semibold">Benefit / rate
-            <select id="scholarshipPercentageValue" name="benefitValue" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"></select><input id="scholarshipAmountValue" name="benefitValue" maxlength="80" placeholder="Fixed amount" class="mt-1 hidden w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800" disabled>
+            <select id="scholarshipPercentageValue" name="benefitValue" required class="mt-1 block w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800"></select><input id="scholarshipAmountValue" name="benefitValue" maxlength="80" inputmode="decimal" placeholder="Enter amount" class="mt-1 hidden w-full rounded-xl border px-3 py-2 dark:border-slate-700 dark:bg-slate-800" disabled>
         </label>
         <p id="scholarshipTypeError" role="alert" class="text-sm text-rose-700 dark:text-rose-300 sm:col-span-2" hidden></p>
         <div class="flex flex-wrap gap-3 sm:col-span-2">

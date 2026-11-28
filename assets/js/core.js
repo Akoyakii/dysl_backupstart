@@ -49,6 +49,7 @@ function bindRecordControls() {
             openModal: () => openModal(),
             decideScholar: (_event, button) => decideScholar(button.dataset.status),
             editScholarshipType: (_event, button) => editScholarshipType(button.dataset.scholarshipName),
+            openScholarshipCreate,
             resetScholarshipType,
             editScholar: (_event, button) => openModal(button.dataset.studentId),
             openRecentScholar: (_event, button) => openRecentScholar(button.dataset.studentId),
@@ -71,7 +72,7 @@ function bindRecordControls() {
             resetSystemSettings,
         },
         change: {
-            renderAnalytics, renderActivity, renderScholars, renderScholarships, updateSelectedScholarships,
+            renderAnalytics, renderActivity, renderScholars, renderScholarships, updateSelectedScholarships, updateScholarshipBenefitInput,
             renderScholarshipUsageDetails: () => renderScholarshipUsageDetails(),
             updateProgramOptions,
             restoreBackup: (_event, input) => restoreBackup(input),

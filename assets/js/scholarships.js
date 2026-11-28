@@ -73,14 +73,14 @@ function renderScholarships(){
             </details>`;
         }).join("") || emptyScholarships();
     } else {
-        container.className = "grid gap-4 md:grid-cols-2 xl:grid-cols-3";
+        container.className = "grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3";
         const groups = new Map();
         page.forEach(s => {
             const code = s[0].replace(/\s*\d.*$/, "").replace(/\s*[â€”â€“-].*$/, "").trim() || s[0];
             if (!groups.has(code)) groups.set(code, []);
             groups.get(code).push(s);
         });
-        container.innerHTML = [...groups].map(([code, items]) => `<details class="group overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow open:shadow-md dark:border-slate-800 dark:bg-slate-900">
+        container.innerHTML = [...groups].map(([code, items]) => `<details class="group self-start overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow open:shadow-md dark:border-slate-800 dark:bg-slate-900">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 bg-slate-50/80 px-5 py-4 [&::-webkit-details-marker]:hidden dark:bg-slate-800/60">
                 <span class="min-w-0"><span class="block text-lg font-black tracking-tight">${escapeHtml(code)}</span><span class="mt-1 block text-xs font-medium text-slate-500">${items.length} scholarship option${items.length === 1 ? "" : "s"}</span></span>
                 <span aria-hidden="true" class="text-xl text-slate-400 transition-transform group-open:rotate-180">⌄</span>

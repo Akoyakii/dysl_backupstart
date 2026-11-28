@@ -4,6 +4,23 @@ const scholarshipCode = name => String(name || "").match(/^[A-Za-z]+/)?.[0] || "
 const scholarshipBenefitParts = benefit => /%$/.test(String(benefit || "").trim())
     ? {type: "percentage", value: String(benefit).trim().replace(/%$/, "")}
     : {type: "amount", value: String(benefit || "")};
+function updateScholarshipBenefitInput() {
+    const form = document.getElementById("scholarshipTypeForm");
+    const type = form?.elements.namedItem("benefitType")?.value || "percentage";
+    const percentage = document.getElementById("scholarshipPercentageValue");
+    const amount = document.getElementById("scholarshipAmountValue");
+    if (!percentage || !amount) return;
+    const isPercentage = type === "percentage";
+    percentage.classList.toggle("hidden", !isPercentage); percentage.disabled = !isPercentage;
+    amount.classList.toggle("hidden", isPercentage); amount.disabled = isPercentage;
+}
+function openScholarshipCreate() {
+    resetScholarshipType();
+    const dialog = document.getElementById("editScholarshipDialog");
+    document.getElementById("editScholarshipHeading").textContent = "Add scholarship type";
+    dialog.showModal();
+    updateScholarshipBenefitInput();
+}
 const scholarshipDescriptions = {TES: "Government tuition assistance for approved beneficiaries under the Tertiary Education Subsidy program.", TDP: "Government educational assistance for approved beneficiaries under the Tulong Dunong Program.", DISSF: "An in-house scholarship that reduces eligible tuition, miscellaneous, laboratory, or other school fees.", EMP: "A dependent discount for qualified employees' spouses, children, or siblings.", DYH: "A dependent discount for qualified Dr. Yanga Hospital employees.", SA: "A student assistant arrangement with a fixed per-term payment; college fees are excluded.", PWD: "A tuition discount for students with a valid regular PWD identification card.", ENT: "An entrance scholarship for qualified Grade 12 graduates, subject to continued eligibility rules.", "Full Acad": "A full academic tuition scholarship for students who meet the Dean's List and GWA requirements.", "Half Acad": "A partial academic tuition scholarship for students who meet the two-time Dean's List and GWA requirements."};
 
 function scholarshipDescription(name, provided = "") {
@@ -33,9 +50,18 @@ function renderScholarships(){
     const options = index => [...new Set(window.scholarshipCatalog.map(row => row[index]))]
         .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
     const categories = options(1);
-    updateSelectOptions("newScholarshipCategory", "Select category", categories);
+    const categorySelect = document.getElementById("newScholarshipCategory");
+    if (categorySelect) {
+        const selectedCategory = categorySelect.value;
+        const codeByCategory = new Map();
+        window.scholarshipCatalog.forEach(item => { if (!codeByCategory.has(item[1])) codeByCategory.set(item[1], scholarshipCode(item[0]) || item[1]); });
+        categorySelect.innerHTML = `<option value="">Select code</option>` + categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(codeByCategory.get(category) || category)}</option>`).join("");
+        if (categories.includes(selectedCategory)) categorySelect.value = selectedCategory;
+    }
     const coverageBox = document.getElementById("scholarshipCoverageOptions");
     if (coverageBox && !coverageBox.childElementCount) coverageBox.innerHTML = scholarshipCoverageOptions.map(value => `<label class="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold dark:border-slate-700"><input type="checkbox" name="coverage[]" value="${escapeHtml(value)}"> <span>${escapeHtml(value)}</span></label>`).join("");
+    const percentageSelect = document.getElementById("scholarshipPercentageValue");
+    if (percentageSelect && !percentageSelect.childElementCount) percentageSelect.innerHTML = `<option value="">Select percentage</option>` + [10,20,25,30,40,50,60,75,100].map(value => `<option value="${value}">${value}%</option>`).join("");
     const filter = updateSelectOptions("scholarshipFilter", "All categories", categories);
     
     const results = window.scholarshipCatalog.filter(s => 
@@ -127,7 +153,6 @@ function editScholarshipType(name) {
     };
     const fields = form.elements;
     form.dataset.editName = type[0];
-    fields.namedItem("code").value = scholarshipCode(type[0]);
     fields.namedItem("name").value = type[0];
     fields.namedItem("name").readOnly = false;
     fields.namedItem("description").value = type[2] || "";
@@ -140,7 +165,9 @@ function editScholarshipType(name) {
     form.querySelector('[type="submit"]').textContent = "Save changes";
     document.getElementById("cancelScholarshipEdit").hidden = false;
     dialog.showModal();
+    document.getElementById("editScholarshipHeading").textContent = "Edit scholarship type";
     fields.namedItem("category").focus();
+    updateScholarshipBenefitInput();
 }
 
 function resetScholarshipType() {
@@ -157,7 +184,6 @@ function resetScholarshipType() {
     errorBox.textContent = "";
     if (dialog.open) {
         dialog.close();
-        panel.append(form);
     }
 }
 
@@ -169,11 +195,11 @@ async function submitScholarshipType(event) {
     const editName = form.dataset.editName;
     const formData = new FormData(form);
     const type = Object.fromEntries(formData);
-    const code = String(type.code || "").trim().toUpperCase();
     const displayName = String(type.name || "").trim();
     const coverage = [...form.querySelectorAll('input[name="coverage[]"]:checked')].map(input => input.value).join(", ");
     const benefitValue = String(type.benefitValue || "").trim();
-    type.name = editName || (code && displayName.toUpperCase().startsWith(code + " ") ? displayName : `${code} ${displayName}`.trim());
+    const code = scholarshipCode(displayName) || [...(window.scholarshipCatalog || [])].find(item => item[1] === type.category)?.[0] || type.category;
+    type.name = editName || (displayName.toUpperCase().startsWith(String(code).toUpperCase() + " ") ? displayName : `${code} ${displayName}`.trim());
     type.coverage = coverage;
     type.benefit = type.benefitType === "percentage" ? `${benefitValue.replace(/%$/, "")}%` : benefitValue;
     delete type.code; delete type.benefitType; delete type.benefitValue; delete type["coverage[]"];

@@ -166,7 +166,9 @@ function openViewModal(id) {
 
     const modal = document.getElementById("viewModal");
     const editButton = document.getElementById("viewEditButton");
-    if (editButton) editButton.dataset.studentId = student.id;
+    if (editButton) { editButton.dataset.studentId = student.id; editButton.classList.remove("hidden"); }
+    const editActions = document.getElementById("viewEditActions");
+    if (editActions) { editActions.classList.add("hidden"); editActions.classList.remove("flex"); }
     const decision = document.getElementById("scholarDecision");
     if (decision) {
         decision.dataset.studentId = student.id;
@@ -175,6 +177,41 @@ function openViewModal(id) {
     }
     modal.classList.remove("hidden");
     modal.classList.add("flex");
+}
+
+function editViewScholar() {
+    const id = document.getElementById("viewEditButton")?.dataset.studentId;
+    const student = scholars.find(item => item.id === id);
+    if (!student) return;
+    const nameParts = String(student.name || "").split(",");
+    const given = (nameParts[1] || "").trim().split(/\s+/);
+    const fields = {viewFirstName: given.shift() || "", viewMiddleName: given.join(" "), viewLastName: (nameParts[0] || "").trim(), viewId: student.id};
+    Object.entries(fields).forEach(([elementId, value]) => {
+        const element = document.getElementById(elementId);
+        if (element) element.innerHTML = `<input data-view-edit-field="${elementId}" value="${escapeHtml(value)}" class="w-full rounded-lg border bg-white px-2 py-1 font-bold dark:border-slate-700 dark:bg-slate-800">`;
+    });
+    document.getElementById("viewEditButton")?.classList.add("hidden");
+    const actions = document.getElementById("viewEditActions");
+    if (actions) { actions.classList.remove("hidden"); actions.classList.add("flex"); }
+}
+
+function cancelViewEdit() {
+    const id = document.getElementById("viewEditButton")?.dataset.studentId;
+    if (id) openViewModal(id);
+}
+
+async function saveViewEdit() {
+    const id = document.getElementById("viewEditButton")?.dataset.studentId;
+    const student = scholars.find(item => item.id === id);
+    if (!student) return;
+    const value = field => document.querySelector(`[data-view-edit-field="${field}"]`)?.value.trim() || "";
+    const first = value("viewFirstName"), middle = value("viewMiddleName"), last = value("viewLastName"), newId = value("viewId");
+    if (!first || !last || !/^\d{4}-\d{5}$/.test(newId)) { showToast("Enter a valid name and student ID."); return; }
+    try {
+        await requestRecords({action: "edit-scholar", id, newId, name: `${last}, ${first}${middle ? ` ${middle}` : ""}`, scholarship: scholarshipNames(student), status: student.status}, {...student, id: newId, name: `${last}, ${first}${middle ? ` ${middle}` : ""}`});
+        closeViewModal();
+        showToast("Student details saved.");
+    } catch (error) { showToast(error.message); }
 }
 
 function renderViewTermTabs(student, history, activeYear = null, activeTerm = null) {

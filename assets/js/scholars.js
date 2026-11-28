@@ -40,6 +40,8 @@ function renderScholars(){
     const query = (document.getElementById("search")?.value || "").trim().toLowerCase();
     const status = document.getElementById("filter")?.value || "All Status";
     const semester = document.getElementById("scholarSemester")?.value || "";
+    const sort = document.getElementById("scholarSort")?.value || "name";
+    const order = document.getElementById("scholarOrder")?.value || "asc";
     const historyById = new Map();
     for (const record of discountHistory) {
         if (!historyById.has(record.id)) historyById.set(record.id, []);
@@ -64,9 +66,15 @@ function renderScholars(){
         [entry.scholar.name, entry.scholar.id, entry.scholar.course, ...scholarshipNames(entry.scholar)]
             .join(" ").toLowerCase().includes(query)
     );
+    const sortValue = entry => ({name: entry.scholar.name, id: entry.scholar.id, updated: entry.scholar.updated, year: entry.year, status: entry.scholar.status}[sort] || "");
+    matches.sort((a, b) => {
+        const left = String(sortValue(a) || "").toLowerCase(), right = String(sortValue(b) || "").toLowerCase();
+        const result = left.localeCompare(right, undefined, {numeric: true});
+        return order === "desc" ? -result : result;
+    });
     
     const canEdit = Boolean(document.getElementById("scholarForm"));
-    const page = tablePage("scholarPagination", matches, [query, status, semester, year, department, selectedScholarship], renderScholars);
+    const page = tablePage("scholarPagination", matches, [query, status, semester, year, department, selectedScholarship, sort, order], renderScholars);
     document.getElementById("scholarRows").innerHTML = page.map(({scholar: s, year, semester}) => {
         let names = scholarshipNames(s);
         
@@ -81,6 +89,10 @@ function renderScholars(){
             </div>`}</td>
         </tr>`;
     }).join("") || `<tr><td colspan="6" class="p-10 text-center text-slate-500">No matching records.</td></tr>`;
+}
+
+function openScholarFilters() {
+    document.getElementById("scholarFiltersDialog")?.showModal();
 }
 
 function scholarStatus(status) {

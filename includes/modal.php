@@ -112,6 +112,7 @@
 <div id="viewModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-900/25 p-2 backdrop-blur-sm sm:p-4">
     <div class="max-h-[96vh] w-full max-w-6xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <div class="sticky top-0 z-10 flex items-start justify-between border-b bg-white/95 px-5 py-3 backdrop-blur sm:px-7 dark:border-slate-200/10 dark:bg-slate-900/95">
+            <?php if ($canManageRecords): ?><button id="viewEditButton" type="button" data-click="editScholar" aria-label="Edit student details" title="Edit student details" class="absolute right-16 top-3 rounded-xl border px-3 py-2 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">✎</button><?php endif; ?>
             <div>
                 <div class="flex items-center gap-2"><h2 class="text-base font-extrabold tracking-tight text-slate-800 dark:text-white">Scholar Details</h2><span class="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-800">AY 2025–2026</span></div>
                 <p class="mt-0.5 text-[10px] text-slate-500">Complete student scholarship profile and grant status overview</p>

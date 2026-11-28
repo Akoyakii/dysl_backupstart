@@ -63,7 +63,6 @@ function renderScholars(){
             <td class="px-5 py-4 text-sm tabular-nums text-slate-600 dark:text-slate-400">${s.saving ? "Saving\u2026" : escapeHtml(formatPhilippineTime(s.updated))}</td>
             <td class="px-5 py-4">${s.saving ? "" : `<div class="flex flex-wrap gap-3">
                 <button type="button" data-student-id="${escapeHtml(s.id)}" data-click="openViewModal" title="View student details" class="font-bold text-dyci-blue dark:text-blue-400 hover:underline">View</button>
-                ${canEdit ? `<button type="button" data-student-id="${escapeHtml(s.id)}" data-click="editScholar" title="Edit student record" class="font-bold text-dyci-blue dark:text-blue-400 hover:underline">Edit</button>` : ""}
             </div>`}</td>
         </tr>`;
     }).join("") || `<tr><td colspan="6" class="p-10 text-center text-slate-500">No matching records.</td></tr>`;
@@ -166,6 +165,8 @@ function openViewModal(id) {
     }
 
     const modal = document.getElementById("viewModal");
+    const editButton = document.getElementById("viewEditButton");
+    if (editButton) editButton.dataset.studentId = student.id;
     const decision = document.getElementById("scholarDecision");
     if (decision) {
         decision.dataset.studentId = student.id;

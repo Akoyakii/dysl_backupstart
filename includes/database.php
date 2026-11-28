@@ -145,12 +145,13 @@ function scholarshipCatalog(?PDO $db = null): array
     }
     unset($entry);
     if ($db) {
+        $dbCatalog = [];
         foreach ($db->query('SELECT name, category, description, coverage, benefit, disabled FROM scholarship_types ORDER BY name') as $row) {
             $original = $byName[$row['name']] ?? null;
             $description = trim((string) ($row['description'] ?? '')) !== ''
                 ? $row['description']
                 : ($original && $original[3] === $row['coverage'] && $original[4] === $row['benefit'] ? $original[2] : $row['coverage']);
-            $byName[$row['name']] = [
+            $dbCatalog[$row['name']] = [
                 $row['name'],
                 $row['category'],
                 $description,
@@ -160,6 +161,7 @@ function scholarshipCatalog(?PDO $db = null): array
                 (bool) $row['disabled'],
             ];
         }
+        if ($dbCatalog) return array_values($dbCatalog);
     }
     return array_values($byName);
 }

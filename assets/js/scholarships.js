@@ -2,7 +2,7 @@ let scholarshipViewMode = "tile";
 const scholarshipCoverageGroups = {
     "Tuition": ["Tuition"],
     "Laboratory": ["Lab Fees", "Lab per Unit"],
-    "Miscellaneous": ["Miscellaneous"],
+    "Miscellaneous": ["ATHLETIC FEE", "LIBRARY FEE", "MEDICAL/DENTAL", "GUIDANCE", "STUDENT SERVICES", "PERMIT", "TEST PAPER", "AUDIO VISUAL"],
     "Other Fees": ["AUTOMATION FEE", "BULPRISA", "CULTURAL FEE", "BREAKAGE/LOSSES", "ENERGY FEE", "STUDENT COUNCIL FEE", "PUBLICATION", "REGISTRATION FEE", "LMS FEE", "PRISAA"]
 };
 const scholarshipCode = name => String(name || "").match(/^[A-Za-z]+/)?.[0] || "";

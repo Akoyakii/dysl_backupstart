@@ -26,7 +26,7 @@ tailwind.config = {
 }
 </script>
 <style>
-body{font-family:Inter,ui-sans-serif,system-ui,sans-serif}.view{display:none}.view.active{display:block}
+body{font-family:Inter,ui-sans-serif,system-ui,sans-serif}.view{display:none!important}.view.active{display:block!important}
 #sidebar{transform:translateX(-100%);visibility:hidden;transition:transform .2s ease,visibility 0s linear .2s;max-width:calc(100vw - 2rem)}
 #sidebar.open{transform:translateX(0);visibility:visible;transition-delay:0s}
 #sidebarEdge{display:none}

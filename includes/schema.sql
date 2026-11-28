@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS signup_verifications (
 
 CREATE TABLE IF NOT EXISTS scholarship_types (
     name VARCHAR(120) NOT NULL PRIMARY KEY,
+    code VARCHAR(24) NOT NULL DEFAULT '',
     category VARCHAR(80) NOT NULL,
     description TEXT NULL,
     coverage VARCHAR(255) NOT NULL,

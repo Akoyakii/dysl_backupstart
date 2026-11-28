@@ -66,5 +66,6 @@ INSERT INTO scholarship_types (name, category, description, coverage, benefit, d
 INSERT INTO scholarship_types (name, category, description, coverage, benefit, disabled) VALUES ('AUTH 3', 'AUTH', 'Grade 9â€“12', 'Grade Eligibility', 'Grade 9â€“12', 0) ON DUPLICATE KEY UPDATE category=VALUES(category), description=VALUES(description), coverage=VALUES(coverage), benefit=VALUES(benefit);
 INSERT INTO scholarship_types (name, category, description, coverage, benefit, disabled) VALUES ('AUTH 4', 'AUTH', 'Grade 10â€“12', 'Grade Eligibility', 'Grade 10â€“12', 0) ON DUPLICATE KEY UPDATE category=VALUES(category), description=VALUES(description), coverage=VALUES(coverage), benefit=VALUES(benefit);
 INSERT INTO scholarship_types (name, category, description, coverage, benefit, disabled) VALUES ('AUTH 5', 'AUTH', 'Grade 11â€“12', 'Grade Eligibility', 'Grade 11â€“12', 0) ON DUPLICATE KEY UPDATE category=VALUES(category), description=VALUES(description), coverage=VALUES(coverage), benefit=VALUES(benefit);
+UPDATE scholarship_types SET code = TRIM(SUBSTRING_INDEX(name, ' ', 1)) WHERE code IS NULL OR code = '';
 COMMIT;
 

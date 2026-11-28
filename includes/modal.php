@@ -1,5 +1,5 @@
 <?php if ($canManageRecords): ?>
-<div id="modal" class="fixed inset-0 z-[80] items-center justify-center bg-slate-950/60 p-4">
+<div id="modal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/60 p-4">
 <div class="scholar-form-panel flex w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/20 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
 <div class="shrink-0 border-b px-5 py-4 sm:px-6 dark:border-slate-800">
 <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-black tracking-tight">Add Student Scholar</h2><p class="mt-1 text-sm text-slate-500">Enter the student details below.</p></div><button type="button" data-click="closeModal" aria-label="Close dialog" class="rounded-xl border px-3 py-2 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">✕</button></div>
@@ -109,36 +109,35 @@
 
 <?php endif; ?>
 <!-- VIEW SCHOLAR MODAL -->
-<div id="viewModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-    <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/20 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-        <div class="sticky top-0 z-10 flex items-center justify-between border-b bg-white/95 px-5 py-4 backdrop-blur sm:px-6 dark:border-slate-800 dark:bg-slate-900/95">
+<div id="viewModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-900/25 p-2 backdrop-blur-sm sm:p-4">
+    <div class="max-h-[96vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+        <div class="sticky top-0 z-10 flex items-start justify-between border-b bg-white/95 px-5 py-3 backdrop-blur sm:px-7 dark:border-slate-200/10 dark:bg-slate-900/95">
             <div>
-                <h2 class="text-xl font-black tracking-tight">Scholar Details</h2>
-                <p class="mt-1 text-sm text-slate-500">Complete profile information</p>
+                <div class="flex items-center gap-2"><h2 class="text-base font-extrabold tracking-tight text-slate-800 dark:text-white">Scholar Details</h2><span class="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-800">AY 2025–2026</span></div>
+                <p class="mt-0.5 text-[10px] text-slate-500">Complete student scholarship profile and grant status overview</p>
             </div>
             <button type="button" data-click="closeViewModal" class="rounded-xl border px-3 py-2 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">✕</button>
         </div>
-        <div class="p-5 sm:p-6">
-            <div class="grid grid-cols-1 border border-slate-300 dark:border-slate-700 sm:grid-cols-[1.2fr_1fr_1fr]">
-                <div class="border-b p-4 text-sm font-bold sm:border-b-0 sm:border-r">School year: <select id="viewSchoolYears" class="ml-2 rounded border px-2 py-1 text-sm font-bold dark:border-slate-700 dark:bg-slate-800"></select></div>
-                <div class="hidden sm:block"></div>
-                <div id="viewSemesters" class="flex flex-wrap items-center gap-1 border-b p-2 sm:border-b-0 sm:border-r"></div>
+        <div class="px-5 py-3 sm:px-7">
+            <div class="flex items-center justify-between border-y border-slate-100 py-2 text-[10px] dark:border-slate-800">
+                <label class="font-bold uppercase tracking-wide text-slate-500">School year <select id="viewSchoolYears" class="ml-2 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold dark:border-slate-700 dark:bg-slate-800"></select></label>
+                <div class="flex items-center gap-1"><span class="mr-2 font-bold uppercase tracking-wide text-slate-400">Term</span><div id="viewSemesters" class="flex flex-wrap items-center gap-1"></div></div>
             </div>
-            <div class="grid border-x border-b border-slate-300 dark:border-slate-700 sm:grid-cols-[1.15fr_1fr]">
-                <div class="space-y-5 border-b p-5 sm:border-b-0 sm:border-r">
-                    <h3 class="text-xl font-black" id="viewName"></h3>
+            <div class="grid border-x border-b border-slate-100 dark:border-slate-800 sm:grid-cols-[1.12fr_.88fr]">
+                <div class="space-y-4 border-b p-4 sm:border-b-0 sm:border-r sm:p-5">
+                    <h3 class="text-sm font-extrabold" id="viewName"></h3>
                     <div class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2"><div><span class="text-slate-500">First Name:</span><div id="viewFirstName" class="font-bold"></div></div><div><span class="text-slate-500">Middle Name:</span><div id="viewMiddleName" class="font-bold"></div></div><div><span class="text-slate-500">Last Name:</span><div id="viewLastName" class="font-bold"></div></div><div><span class="text-slate-500">School ID:</span><div id="viewId" class="font-bold"></div></div><div><span class="text-slate-500">Email:</span><div class="font-bold">—</div></div><div><span class="text-slate-500">Phone Number:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Address:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Course / Year:</span><div id="viewCourse" class="font-bold"></div></div><div><span class="text-slate-500">Status:</span><div><span id="viewStatus" class="font-bold"></span></div></div><div><span class="text-slate-500">Last updated:</span><div id="viewUpdated" class="font-bold"></div></div></div>
                 </div>
-                <div class="bg-slate-50/60 p-5 dark:bg-slate-800/30"><div id="viewTermDetails" class="h-full rounded-2xl border bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"></div><div id="viewDiscountHistory" hidden></div></div>
+                <div class="bg-slate-50/60 p-3 dark:bg-slate-800/30 sm:p-4"><div id="viewTermDetails" class="h-full space-y-2"></div><div id="viewDiscountHistory" hidden></div></div>
             </div>
         </div>
-        <div class="flex flex-wrap justify-end gap-2 border-t p-5 dark:border-slate-800">
+        <div class="flex flex-wrap justify-end gap-2 border-t p-4 dark:border-slate-800 sm:p-5">
             <?php if ($canManageRecords): ?>
             <div id="scholarDecision" class="hidden flex-wrap gap-2">
                 <button type="button" data-click="decideScholar" data-status="Approved" class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60">Approve</button>
             </div>
             <?php endif; ?>
-            <button data-click="closeViewModal" class="rounded-xl bg-dyci-blue px-6 py-3 font-bold text-white shadow-lg hover:bg-dyci-blueDark transition-colors">Close</button>
+            <button type="button" data-click="closeViewModal" class="rounded-lg bg-dyci-blue px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-dyci-blueDark transition-colors">Close</button>
         </div>
     </div>
 </div>

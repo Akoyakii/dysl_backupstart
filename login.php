@@ -184,6 +184,34 @@ function e($value): string {
 }
 
 $currentYear = date('Y');
+$heroPhotos = [
+    'assets/images/hero/932039332_1661756688668482_7588441819578912030_n.png',
+    'assets/images/hero/931925613_1668512481377899_3906086149806449635_n.png',
+    'assets/images/hero/935930737_3344173352436145_4777848460968027959_n.png',
+    'assets/images/hero/931739271_2232786040991141_939013527041166371_n.png',
+    'assets/images/hero/933839676_1504299688276069_897558903439560836_n.png',
+];
+$heroSlides = [
+    [
+        'label' => 'Welcome',
+        'eyebrow' => 'Magis Quam Schola, Familia.',
+        'text' => 'More than a school, a family. Access your unified digital campus portal for enrollments, academic grades, class schedules, and online student services.',
+        'theme' => 'welcome',
+    ],
+    [
+        'label' => 'Mission',
+        'eyebrow' => 'Our commitment',
+        'text' => 'Dr. Yanga’s Colleges, Inc. is committed to providing meaningful, quality, and holistic education that nurtures the intellectual, moral, spiritual, and social development of every learner. Guided by faith, strengthened by a culture of excellence, and inspired by innovation and service, DYCI seeks to form competent, compassionate, and responsible individuals who can respond to the needs of an ever-changing world.',
+        'theme' => 'mission',
+    ],
+    [
+        'label' => 'Vision',
+        'eyebrow' => 'Our aspiration',
+        'text' => 'Illuminated by the spirit of magis quam schola—familia, more than a school, a family—Dr. Yanga’s Colleges, Inc. envisions itself as a God-centered and globally excellent beacon of moral formation, holistic learning, transformative research and innovations, and sustainable societal communion for all humanity. This vision expresses who DYCI seeks to become and the kind of community it strives to build. At its heart is the conviction that education goes beyond academic achievement. It is a journey of forming individuals who grow in faith, character, knowledge, creativity, compassion, and responsibility toward others.',
+        'theme' => 'vision',
+    ],
+];
+$heroSlides = [$heroSlides[0]];
 ?>
 <!DOCTYPE html>
 <html class="h-full" lang="en">
@@ -241,6 +269,20 @@ $currentYear = date('Y');
                 linear-gradient(to right, rgba(5, 11, 30, 0.035) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(5, 11, 30, 0.035) 1px, transparent 1px);
         }
+        .hero-carousel { min-height: 430px; }
+        .hero-slide { display: none; animation: heroSlideIn .45s ease both; }
+        .hero-slide.is-active { display: block; }
+        .hero-slide-copy { max-width: 38rem; }
+        .hero-slide-copy--mission, .hero-slide-copy--vision { max-width: 42rem; }
+        .hero-slide-copy--mission .hero-slide-text, .hero-slide-copy--vision .hero-slide-text { font-size: .95rem; line-height: 1.8; }
+        .hero-photo-carousel { position: fixed; inset: 0; z-index: 0; overflow: hidden; border-radius: 0; opacity: 1; pointer-events: none; }
+        .hero-photo-slide { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: 0; transform: scale(1.03); transition: opacity .7s ease, transform 6s ease; }
+        .hero-photo-slide.is-active { opacity: .68; transform: scale(1); }
+        .hero-photo-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.42) 48%, rgba(255,255,255,.2) 100%); }
+        .hero-carousel__content { position: relative; z-index: 1; }
+        @media (max-width: 1023px) { .hero-photo-slide.is-active { opacity: .52; } }
+        @keyframes heroSlideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .hero-slide { animation: none; } }
     </style>
 </head>
 
@@ -251,7 +293,8 @@ $currentYear = date('Y');
     <div class="absolute inset-0 subtle-grid opacity-70"></div>
 </div>
 
-<header class="relative z-20 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-md" data-purpose="top-navigation">
+<!-- Top brand header removed to keep the login layout focused on the hero and sign-in panel. -->
+<!--
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <div class="flex items-center space-x-3.5">
             <div class="w-11 h-11 flex-shrink-0">
@@ -263,26 +306,70 @@ $currentYear = date('Y');
             </div>
         </div>
     </div>
+-->
+
+<header class="relative z-20 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-md" data-purpose="top-navigation">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+        <div>
+            <span class="block text-xs uppercase font-cinzel tracking-wider text-dyci-goldInk font-bold"><?= e($config['brand_name']) ?></span>
+            <span class="block text-xs text-slate-500 tracking-tight font-medium">Institutional Portal &bull; <?= e($config['location']) ?></span>
+        </div>
+        <div class="inline-flex shrink-0 items-center gap-2 rounded-full border border-dyci-gold/40 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm sm:px-5" aria-label="Admissions status">
+            <span class="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]"></span>
+            <span>Admissions Open A.Y. 2025–2026</span>
+        </div>
+    </div>
 </header>
 
 <main class="relative z-10 flex-grow flex items-center justify-center py-8 lg:py-12 px-4 sm:px-6 lg:px-8" data-purpose="portal-hero-container">
     <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-        <section class="lg:col-span-7 flex flex-col justify-center text-left space-y-6" data-purpose="hero-brand-section">
-            <div class="space-y-3">
-                <h1 class="text-balance text-4xl sm:text-6xl font-serif font-bold text-slate-900 tracking-tight leading-[1.08] drop-shadow-sm">
-                    Scholarship records
-                </h1>
-                <div class="pt-2">
-                    <div class="w-24 sm:w-32 h-[3px] bg-dyci-gold mt-2 rounded-full"></div>
-                    <p class="text-slate-600 text-sm mt-3 max-w-lg leading-relaxed font-light">
-                        <?= e($config['motto_sub']) ?>
-                    </p>
-                </div>
+        <section class="hero-carousel relative lg:col-span-7 flex flex-col justify-center text-left" data-purpose="hero-brand-section" aria-label="DYCI introduction">
+            <div class="hero-photo-carousel" data-hero-photo-carousel aria-hidden="true">
+                <?php foreach ($heroPhotos as $index => $photo): ?>
+                <div class="hero-photo-slide <?= $index === 0 ? 'is-active' : '' ?>" data-hero-photo="<?= $index ?>" style="background-image:url('<?= e($photo) ?>')"></div>
+                <?php endforeach; ?>
+                <div class="hero-photo-overlay"></div>
+            </div>
+            <div class="hero-carousel__content">
+            <div class="hero-carousel__slides">
+                <?php foreach ($heroSlides as $index => $slide): ?>
+                <article class="hero-slide hero-slide--<?= e($slide['theme']) ?> <?= $index === 0 ? 'is-active' : '' ?>" data-hero-slide="<?= $index ?>" aria-hidden="<?= $index === 0 ? 'false' : 'true' ?>">
+                    <?php if ($index === 0): ?>
+                    <div class="mb-7 flex items-center gap-5">
+                        <div class="h-28 w-28 shrink-0 sm:h-36 sm:w-36">
+                            <img alt="<?= e($config['brand_name']) ?> seal" class="h-full w-full object-contain drop-shadow-lg" src="<?= e($config['logo_path']) ?>"/>
+                        </div>
+                        <div class="h-14 w-px bg-slate-200"></div>
+                        <div>
+                            <p class="font-cinzel text-sm font-bold uppercase tracking-wide text-dyci-goldInk sm:text-base">Established 1950</p>
+                            <p class="mt-1 text-sm text-slate-500 sm:text-base">Transformative Christian Education</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="hero-slide-copy hero-slide-copy--<?= e($slide['theme']) ?> space-y-4">
+                        <h1 class="text-balance <?= $index === 0 ? 'text-5xl leading-[0.98] sm:text-7xl' : 'text-5xl leading-none sm:text-6xl' ?> font-serif font-bold tracking-tight text-slate-900 drop-shadow-sm"><?= $index === 0 ? 'Welcome<br/>to DYSL' : e($slide['label']) ?></h1>
+                        <div class="space-y-3 pt-1">
+                            <p class="font-cinzel text-sm font-bold uppercase tracking-[0.2em] text-dyci-goldInk sm:text-base"><?= e($slide['eyebrow']) ?></p>
+                            <div class="h-[3px] w-32 rounded-full bg-dyci-gold"></div>
+                            <?php if ($index > 0): ?><p class="hero-slide-text max-w-xl text-sm font-light leading-relaxed text-slate-500 sm:text-base"><?= e($slide['text']) ?></p><?php endif; ?>
+                        </div>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if (count($heroSlides) > 1): ?><div class="mt-8 flex items-center gap-2" aria-label="Introduction slides">
+                <?php foreach ($heroSlides as $index => $slide): ?>
+                <button type="button" class="hero-dot h-1.5 rounded-full transition-all duration-300 <?= $index === 0 ? 'is-active w-9 bg-dyci-gold' : 'w-3 bg-slate-300' ?>" data-hero-dot="<?= $index ?>" aria-label="Show <?= e($slide['label']) ?> slide" aria-current="<?= $index === 0 ? 'true' : 'false' ?>"></button>
+                <?php endforeach; ?>
+                <span class="ml-2 font-mono text-[10px] font-bold tracking-widest text-slate-400" data-hero-count>01 / 03</span>
+            </div><?php endif; ?>
             </div>
         </section>
 
         <section class="lg:col-span-5 w-full" data-purpose="portal-login-card">
-            <div class="glass-portal-panel rounded-2xl p-8 sm:p-9 shadow-deepCard relative overflow-hidden w-full max-w-[400px] min-h-[470px] mx-auto flex flex-col justify-center">
+            <div class="glass-portal-panel rounded-2xl p-8 sm:p-10 shadow-deepCard relative overflow-hidden w-full max-w-[440px] min-h-[500px] mx-auto lg:-translate-x-6 flex flex-col justify-center">
                 <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-dyci-gold via-yellow-400 to-dyci-gold/20"></div>
                 <div class="mb-8">
                     <h2 class="text-2xl font-serif font-bold text-slate-900 tracking-tight"><?= $signup ? 'Sign up' : ($activation ? 'Activate your account' : ($resetTemporary ? 'Set a new password' : 'Sign in')) ?></h2>
@@ -392,6 +479,69 @@ $currentYear = date('Y');
             button.setAttribute("aria-label", button.textContent + " " + field);
         });
     });
+
+    const heroSlides = [...document.querySelectorAll('[data-hero-slide]')];
+    const heroDots = [...document.querySelectorAll('[data-hero-dot]')];
+    const heroCount = document.querySelector('[data-hero-count]');
+    const heroCarousel = document.querySelector('.hero-carousel');
+    let activeHeroSlide = 0;
+    let heroTimer;
+
+    function showHeroSlide(index) {
+        activeHeroSlide = (index + heroSlides.length) % heroSlides.length;
+        heroSlides.forEach((slide, slideIndex) => {
+            const active = slideIndex === activeHeroSlide;
+            slide.classList.toggle('is-active', active);
+            slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+        });
+        heroDots.forEach((dot, dotIndex) => {
+            const active = dotIndex === activeHeroSlide;
+            dot.classList.toggle('is-active', active);
+            dot.classList.toggle('w-9', active);
+            dot.classList.toggle('w-3', !active);
+            dot.classList.toggle('bg-dyci-gold', active);
+            dot.classList.toggle('bg-slate-300', !active);
+            dot.setAttribute('aria-current', active ? 'true' : 'false');
+        });
+        if (heroCount) heroCount.textContent = `${String(activeHeroSlide + 1).padStart(2, '0')} / ${String(heroSlides.length).padStart(2, '0')}`;
+    }
+
+    function startHeroTimer() {
+        window.clearInterval(heroTimer);
+        heroTimer = window.setInterval(() => showHeroSlide(activeHeroSlide + 1), 5000);
+    }
+
+    heroDots.forEach((dot, index) => dot.addEventListener('click', () => {
+        showHeroSlide(index);
+        startHeroTimer();
+    }));
+    if (heroCarousel && heroSlides.length > 1) {
+        heroCarousel.addEventListener('mouseenter', () => window.clearInterval(heroTimer));
+        heroCarousel.addEventListener('mouseleave', startHeroTimer);
+        heroCarousel.addEventListener('focusin', () => window.clearInterval(heroTimer));
+        heroCarousel.addEventListener('focusout', startHeroTimer);
+        startHeroTimer();
+    }
+
+    const heroPhotoCarousel = document.querySelector('[data-hero-photo-carousel]');
+    const heroPhotos = [...document.querySelectorAll('[data-hero-photo]')];
+    let activeHeroPhoto = 0;
+    let heroPhotoTimer;
+
+    function showHeroPhoto(index) {
+        activeHeroPhoto = (index + heroPhotos.length) % heroPhotos.length;
+        heroPhotos.forEach((photo, photoIndex) => photo.classList.toggle('is-active', photoIndex === activeHeroPhoto));
+    }
+
+    function startHeroPhotoScroll() {
+        window.clearInterval(heroPhotoTimer);
+        heroPhotoTimer = window.setInterval(() => showHeroPhoto(activeHeroPhoto + 1), 1800);
+    }
+
+    if (heroPhotoCarousel && heroPhotos.length > 1) {
+        heroPhotoCarousel.parentElement.addEventListener('mouseenter', startHeroPhotoScroll);
+        heroPhotoCarousel.parentElement.addEventListener('mouseleave', () => window.clearInterval(heroPhotoTimer));
+    }
 </script>
 
 </body>

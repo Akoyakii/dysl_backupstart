@@ -72,41 +72,27 @@ function renderScholarships(){
         }).join("") || emptyScholarships();
     } else {
         container.className = "grid gap-4 md:grid-cols-2 xl:grid-cols-3";
-        container.innerHTML = page.map(s => {
-            const codeDesc = scholarshipCodeDescription(s[0]);
-            const isDisabled = Boolean(s[6]);
-            return `<div class="rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900 ${isDisabled ? "opacity-60" : ""}">
-            <div class="flex items-start justify-between gap-3">
-                <div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <h2 class="text-lg font-bold">${escapeHtml(s[0])}</h2>
-                        ${isDisabled ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">Disabled</span>` : ""}
-                    </div>
-                    ${codeDesc ? `<p class="mt-0.5 text-xs text-slate-400">${escapeHtml(codeDesc)}</p>` : ""}
-                </div>
-                ${canEdit ? `<div class="flex shrink-0 gap-2">
-                    <button type="button" data-click="editScholarshipType" data-scholarship-name="${escapeHtml(s[0])}" aria-label="Edit ${escapeHtml(s[0])}" class="text-sm font-bold text-dyci-blue hover:underline dark:text-blue-400">Edit</button>
-                    <button type="button" data-click="toggleScholarshipDisabled" data-scholarship-name="${escapeHtml(s[0])}" data-disabled="${!isDisabled}" class="text-sm font-semibold text-slate-500 hover:underline dark:text-slate-300">${isDisabled ? "Enable" : "Disable"}</button>
-                    <button type="button" data-click="deleteScholarship" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-semibold text-rose-700 hover:underline dark:text-rose-300">Delete</button>
-                </div>` : ""}
-            </div>
-            <div class="mt-3 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800">
-                <span class="text-xs font-bold uppercase tracking-wide text-slate-400">Coverage</span>
-                <p class="mt-1 leading-5">${escapeHtml(s[2])}</p>
-                <p class="mt-1 text-xs text-slate-400">Covers: <b class="text-slate-600 dark:text-slate-300">${escapeHtml(s[3])}</b></p>
-                ${s[5] ? `<p class="mt-2 text-sm leading-5 text-slate-600 dark:text-slate-300">${escapeHtml(s[5])}</p>` : ""}
-            </div>
-            <div class="mt-4 flex items-end justify-between gap-3">
-                <div>
-                    <div class="text-sm font-bold">${escapeHtml(s[1])}</div>
-                </div>
-                <div class="text-right">
-                    <span class="text-xs text-slate-400">Benefit</span>
-                    <div class="tabular-nums text-xl font-bold text-dyci-blue dark:text-blue-400">${escapeHtml(s[4])}</div>
-                </div>
-            </div>
-        </div>`;
-        }).join("") || emptyScholarships();
+        const groups = new Map();
+        page.forEach(s => {
+            const code = s[0].replace(/\s*\d.*$/, "").replace(/\s*[â€”â€“-].*$/, "").trim() || s[0];
+            if (!groups.has(code)) groups.set(code, []);
+            groups.get(code).push(s);
+        });
+        container.innerHTML = [...groups].map(([code, items]) => `<details class="group rounded-2xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                <span><span class="block text-lg font-black">${escapeHtml(code)}</span><span class="mt-1 block text-xs text-slate-500">${items.length} scholarship option${items.length === 1 ? "" : "s"}</span></span>
+                <span aria-hidden="true" class="text-xl text-slate-400 transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div class="mt-4 space-y-3 border-t pt-4 dark:border-slate-800">${items.map(s => {
+                const isDisabled = Boolean(s[6]);
+                return `<article class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/70 ${isDisabled ? "opacity-60" : ""}">
+                    <div class="flex items-start justify-between gap-3"><div><h3 class="font-bold">${escapeHtml(s[0])}</h3><p class="text-xs text-slate-500">${escapeHtml(s[1])}</p></div><span class="tabular-nums text-sm font-bold text-dyci-blue dark:text-blue-300">${escapeHtml(s[4])}</span></div>
+                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">${escapeHtml(s[2])}</p><p class="mt-2 text-xs text-slate-500">Coverage: <b>${escapeHtml(s[3])}</b></p>
+                    ${s[5] ? `<p class="mt-2 text-xs text-slate-500">${escapeHtml(s[5])}</p>` : ""}
+                    ${canEdit ? `<div class="mt-3 flex flex-wrap gap-3"><button type="button" data-click="editScholarshipType" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-bold text-dyci-blue hover:underline dark:text-blue-400">Edit</button><button type="button" data-click="toggleScholarshipDisabled" data-scholarship-name="${escapeHtml(s[0])}" data-disabled="${!isDisabled}" class="text-sm font-semibold text-slate-600 hover:underline dark:text-slate-300">${isDisabled ? "Enable" : "Disable"}</button><button type="button" data-click="deleteScholarship" data-scholarship-name="${escapeHtml(s[0])}" class="text-sm font-semibold text-rose-700 hover:underline dark:text-rose-300">Delete</button></div>` : ""}
+                </article>`;
+            }).join("")}</div>
+        </details>`).join("") || emptyScholarships();
     }
 }
 

@@ -311,11 +311,8 @@ async function submitScholar(e) {
 document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => go(b.dataset.view)));
 
 function go(v){
-    const target = document.getElementById(v);
-    if (!target || !target.classList.contains("view")) return;
-    document.querySelectorAll(".view").forEach(x => { x.classList.remove("active"); x.hidden = x !== target; });
-    target.classList.add("active");
-    target.hidden = false;
+    document.querySelectorAll(".view").forEach(x => x.classList.remove("active"));
+    document.getElementById(v).classList.add("active");
     document.querySelectorAll(".nav").forEach(x => x.classList.toggle("active", x.dataset.view === v));
     document.getElementById("pageTitle").textContent = titles[v];
     if (v === "scholars" && !document.getElementById("scholarRows").hasAttribute("aria-busy")) renderScholars();

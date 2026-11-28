@@ -46,13 +46,13 @@ function renderScholarships(){
     const container = document.getElementById("scholarshipCards");
 
     if (scholarshipViewMode === "list") {
-        container.className = "overflow-hidden rounded-2xl border bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900";
+        container.className = "divide-y overflow-hidden rounded-2xl border bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900";
         container.innerHTML = page.map(s => {
             const codeDesc = scholarshipCodeDescription(s[0]);
             const isDisabled = Boolean(s[6]);
-            return `<details class="group border-b last:border-b-0 dark:border-slate-800 ${isDisabled ? "opacity-60" : ""}">
-                <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden dark:hover:bg-slate-800/60">
-                <span class="flex h-9 w-12 shrink-0 items-center justify-center rounded-lg bg-dyci-blue/10 text-xs font-black tracking-wide text-dyci-blue dark:bg-dyci-blue/20 dark:text-blue-300">${escapeHtml(s[0].replace(/\s*\d.*$/, "").slice(0, 8))}</span>
+            return `<details class="group ${isDisabled ? "opacity-60" : ""}">
+                <summary class="grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden dark:hover:bg-slate-800/60">
+                <span class="text-xs font-black uppercase tracking-widest text-slate-400">${escapeHtml(s[0].replace(/\s*\d.*$/, "").slice(0, 8))}</span>
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-baseline gap-2">
                         <span class="truncate font-bold">${escapeHtml(s[0])}</span>
@@ -62,7 +62,7 @@ function renderScholarships(){
                 </div>
                 <div class="flex items-center gap-3"><span class="text-xs text-slate-500">${escapeHtml(s[4])}</span><span aria-hidden="true" class="text-slate-400 transition-transform group-open:rotate-180">⌄</span></div>
                 </summary>
-                <div class="border-t px-4 pb-4 pt-3 text-sm dark:border-slate-800">
+                <div class="border-t bg-slate-50/60 px-5 pb-5 pt-4 text-sm dark:border-slate-800 dark:bg-slate-800/30">
                     ${codeDesc ? `<p class="text-xs text-slate-500">${escapeHtml(codeDesc)}</p>` : ""}
                     <p class="mt-2 text-slate-600 dark:text-slate-300">${escapeHtml(s[2])}</p>
                     ${s[5] ? `<p class="mt-2 text-xs text-slate-400">${escapeHtml(s[5])}</p>` : ""}

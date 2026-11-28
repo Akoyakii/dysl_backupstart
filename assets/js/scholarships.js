@@ -80,12 +80,12 @@ function renderScholarships(){
             if (!groups.has(code)) groups.set(code, []);
             groups.get(code).push(s);
         });
-        container.innerHTML = [...groups].map(([code, items]) => `<details class="group self-start overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow open:shadow-md dark:border-slate-800 dark:bg-slate-900">
+        container.innerHTML = [...groups].map(([code, items]) => `<details class="group relative self-start rounded-2xl border bg-white shadow-sm transition-shadow open:shadow-md dark:border-slate-800 dark:bg-slate-900">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 bg-slate-50/80 px-5 py-4 [&::-webkit-details-marker]:hidden dark:bg-slate-800/60">
                 <span class="min-w-0"><span class="block text-lg font-black tracking-tight">${escapeHtml(code)}</span><span class="mt-1 block text-xs font-medium text-slate-500">${items.length} scholarship option${items.length === 1 ? "" : "s"}</span></span>
                 <span aria-hidden="true" class="text-xl text-slate-400 transition-transform group-open:rotate-180">⌄</span>
             </summary>
-            <div class="max-h-[min(60vh,36rem)] space-y-3 overflow-y-auto border-t p-4 dark:border-slate-800">${items.map(s => {
+            <div class="absolute left-0 right-0 top-full z-30 mt-2 max-h-[min(60vh,36rem)] space-y-3 overflow-y-auto rounded-2xl border bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900">${items.map(s => {
                 const isDisabled = Boolean(s[6]);
                 return `<article class="rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-dyci-blue/40 dark:border-slate-700 dark:bg-slate-900 ${isDisabled ? "opacity-60" : ""}">
                     <div class="flex items-start justify-between gap-3"><div><h3 class="font-bold">${escapeHtml(s[0])}</h3><p class="text-xs text-slate-500">${escapeHtml(s[1])}</p></div><span class="tabular-nums text-sm font-bold text-dyci-blue dark:text-blue-300">${escapeHtml(s[4])}</span></div>

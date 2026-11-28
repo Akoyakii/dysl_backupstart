@@ -2,6 +2,18 @@ function normalizeSchoolYear(year) {
     return (year || "").trim().replace(/^(\d{4})\s*[-–—]\s*(\d{4})$/, "$1–$2");
 }
 
+function displayScholarName(name) {
+    const parts = String(name || "").split(",");
+    if (parts.length < 2) return String(name || "—");
+    const last = parts[0].trim();
+    const given = parts.slice(1).join(",").trim().split(/\s+/).filter(Boolean);
+    if (!given.length) return last || "—";
+    const first = given.shift();
+    const middle = given.map(value => value.replace(/\W/g, "").charAt(0).toUpperCase()).filter(Boolean).map(initial => `${initial}.`);
+    const family = last;
+    return [first, ...middle, family].filter(Boolean).join(" ");
+}
+
 function scholarPeriod(scholar, history) {
     const years = [...new Set(history.map(record => normalizeSchoolYear(record.year)).filter(Boolean))];
     const year = normalizeSchoolYear(scholar.period) || (years.length === 1 ? years[0] : "");
@@ -42,21 +54,24 @@ function renderScholars(){
     const departments = [...new Set(entries.map(entry => entry.department).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const year = updateSelectOptions("scholarYear", "All school years", years);
     const department = updateSelectOptions("scholarDepartment", "All colleges / departments", departments);
+    const scholarshipOptions = [...new Set(entries.flatMap(entry => scholarshipNames(entry.scholar)))].sort((a, b) => a.localeCompare(b));
+    const selectedScholarship = updateSelectOptions("scholarshipFilter", "All scholarships", scholarshipOptions);
     const matches = entries.filter(entry =>
         (!year || entry.year === year) && (!semester || entry.semester === semester) &&
         (!department || entry.department === department) &&
+        (!selectedScholarship || scholarshipNames(entry.scholar).includes(selectedScholarship)) &&
         (status === "All Status" || entry.scholar.status === status) &&
         [entry.scholar.name, entry.scholar.id, entry.scholar.course, ...scholarshipNames(entry.scholar)]
             .join(" ").toLowerCase().includes(query)
     );
     
     const canEdit = Boolean(document.getElementById("scholarForm"));
-    const page = tablePage("scholarPagination", matches, [query, status, semester, year, department], renderScholars);
+    const page = tablePage("scholarPagination", matches, [query, status, semester, year, department, selectedScholarship], renderScholars);
     document.getElementById("scholarRows").innerHTML = page.map(({scholar: s, year, semester}) => {
         let names = scholarshipNames(s);
         
         return `<tr class="border-t dark:border-slate-800">
-            <td class="px-5 py-4"><b>${escapeHtml(s.name)}</b><div class="text-xs tabular-nums text-slate-600 dark:text-slate-400">${escapeHtml(s.id)}</div></td>
+            <td class="px-5 py-4"><b>${escapeHtml(displayScholarName(s.name))}</b><div class="text-xs tabular-nums text-slate-600 dark:text-slate-400">${escapeHtml(s.id)}</div></td>
             <td class="px-5 py-4">${escapeHtml(s.course)}${s.program ? ` <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">${escapeHtml(s.program)}</span>` : ""}<div class="mt-1 text-xs text-slate-600 dark:text-slate-300">${escapeHtml([year, semester].filter(Boolean).join(" · ") || "School period not recorded")}</div></td>
             <td class="px-5 py-4"><div class="flex flex-wrap gap-1.5">${names.map(n => `<span class="rounded-full bg-dyci-blue/10 px-2 py-1 text-xs font-bold text-dyci-blue dark:bg-dyci-blue/30 dark:text-blue-300">${escapeHtml(n)}</span>`).join("")}</div></td>
             <td class="px-5 py-4">${scholarStatus(s.status)}</td>
@@ -81,7 +96,7 @@ function renderRecent(){
         <button type="button" data-click="openRecentScholar" data-student-id="${escapeHtml(s.id)}" ${s.saving ? "disabled" : ""}
             class="recent-scholar-row group flex w-full items-center justify-between gap-4 border-b p-5 text-left last:border-b-0 dark:border-slate-800">
             <span class="min-w-0">
-                <span class="block font-bold text-dyci-blue group-hover:underline group-disabled:no-underline dark:text-blue-300">${escapeHtml(s.name)}</span>
+                <span class="block font-bold text-dyci-blue group-hover:underline group-disabled:no-underline dark:text-blue-300">${escapeHtml(displayScholarName(s.name))}</span>
                 <span class="block text-xs text-slate-500">${escapeHtml(s.id)} · ${escapeHtml(s.course)}</span>
                 <span class="mt-1 block text-xs text-dyci-blue dark:text-blue-400">${escapeHtml(scholarshipNames(s).join(" · "))}</span>
             </span>
@@ -95,7 +110,7 @@ function renderRecent(){
 
 function openRecentScholar(id) {
     document.getElementById("search").value = id;
-    for (const filter of ["scholarYear", "scholarSemester", "scholarDepartment"]) {
+    for (const filter of ["scholarYear", "scholarSemester", "scholarDepartment", "scholarshipFilter"]) {
         document.getElementById(filter).value = "";
     }
     document.getElementById("filter").value = "All Status";

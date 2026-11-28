@@ -115,6 +115,16 @@ function validateRecord(string $kind, array $record): array
             $fields[$kind][] = 'program';
         }
     }
+    if ($kind === 'scholars') {
+        foreach (['email', 'phone', 'address'] as $field) {
+            if (array_key_exists($field, $record)) {
+                if (!is_string($record[$field]) || strlen($record[$field]) > 255 || preg_match('/[\x00-\x1F\x7F]/', $record[$field])) {
+                    throw new InvalidArgumentException('The student contact information is invalid.');
+                }
+                $fields[$kind][] = $field;
+            }
+        }
+    }
     if ($kind !== 'activities' && array_key_exists('waivedAmount', $record) && $record['waivedAmount'] !== null && $record['waivedAmount'] !== '') {
         if (!is_numeric($record['waivedAmount']) || (float) $record['waivedAmount'] < 0 || (float) $record['waivedAmount'] > 10000000) {
             throw new InvalidArgumentException('Enter a valid waived amount.');
@@ -535,6 +545,9 @@ function editScholarAssignments(PDO $db, array $request): ?array
         'status' => $request['status'] ?? null,
         'updated' => gmdate('Y-m-d H:i') . ' UTC',
     ]);
+    foreach (['email', 'phone', 'address'] as $field) {
+        if (array_key_exists($field, $request)) $updated[$field] = trim((string) $request[$field]);
+    }
     if (array_key_exists('waivedAmount', $request)) {
         $updated['waivedAmount'] = $request['waivedAmount'];
     }

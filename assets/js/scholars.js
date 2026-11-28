@@ -116,6 +116,14 @@ function openViewModal(id) {
     document.getElementById("viewMiddleName").textContent = firstAndMiddle.slice(1).join(" ") || "—";
     document.getElementById("viewLastName").textContent = nameParts[0]?.trim() || "—";
     document.getElementById("viewId").textContent = student.id;
+    const contactLabels = {Email: "viewEmail", "Phone Number": "viewPhone", Address: "viewAddress"};
+    document.querySelectorAll("#viewModal .text-slate-500").forEach(label => {
+        const id = contactLabels[label.textContent.trim()];
+        if (id && label.nextElementSibling) label.nextElementSibling.id = id;
+    });
+    document.getElementById("viewEmail")?.replaceChildren(document.createTextNode(student.email || "—"));
+    document.getElementById("viewPhone")?.replaceChildren(document.createTextNode(student.phone || "—"));
+    document.getElementById("viewAddress")?.replaceChildren(document.createTextNode(student.address || "—"));
     document.getElementById("viewCourse").textContent = student.course + (student.program ? ` (${student.program})` : "");
     document.getElementById("viewStatus").textContent = student.status;
     document.getElementById("viewUpdated").textContent = formatPhilippineTime(student.updated);
@@ -185,7 +193,7 @@ function editViewScholar() {
     if (!student) return;
     const nameParts = String(student.name || "").split(",");
     const given = (nameParts[1] || "").trim().split(/\s+/);
-    const fields = {viewFirstName: given.shift() || "", viewMiddleName: given.join(" "), viewLastName: (nameParts[0] || "").trim(), viewId: student.id};
+    const fields = {viewFirstName: given.shift() || "", viewMiddleName: given.join(" "), viewLastName: (nameParts[0] || "").trim(), viewId: student.id, viewEmail: student.email || "", viewPhone: student.phone || "", viewAddress: student.address || ""};
     Object.entries(fields).forEach(([elementId, value]) => {
         const element = document.getElementById(elementId);
         if (element) element.innerHTML = `<input data-view-edit-field="${elementId}" value="${escapeHtml(value)}" class="w-full rounded-lg border bg-white px-2 py-1 font-bold dark:border-slate-700 dark:bg-slate-800">`;
@@ -205,10 +213,11 @@ async function saveViewEdit() {
     const student = scholars.find(item => item.id === id);
     if (!student) return;
     const value = field => document.querySelector(`[data-view-edit-field="${field}"]`)?.value.trim() || "";
-    const first = value("viewFirstName"), middle = value("viewMiddleName"), last = value("viewLastName"), newId = value("viewId");
+    const first = value("viewFirstName"), middle = value("viewMiddleName"), last = value("viewLastName"), newId = value("viewId"), email = value("viewEmail"), phone = value("viewPhone"), address = value("viewAddress");
     if (!first || !last || !/^\d{4}-\d{5}$/.test(newId)) { showToast("Enter a valid name and student ID."); return; }
     try {
-        await requestRecords({action: "edit-scholar", id, newId, name: `${last}, ${first}${middle ? ` ${middle}` : ""}`, scholarship: scholarshipNames(student), status: student.status}, {...student, id: newId, name: `${last}, ${first}${middle ? ` ${middle}` : ""}`});
+        const name = `${last}, ${first}${middle ? ` ${middle}` : ""}`;
+        await requestRecords({action: "edit-scholar", id, newId, name, email, phone, address, scholarship: scholarshipNames(student), status: student.status}, {...student, id: newId, name, email, phone, address});
         closeViewModal();
         showToast("Student details saved.");
     } catch (error) { showToast(error.message); }
@@ -239,6 +248,8 @@ function renderViewTermTabs(student, history, activeYear = null, activeTerm = nu
     const amount = record?.waivedAmount != null ? "₱" + Number(record.waivedAmount).toLocaleString("en-PH", {minimumFractionDigits: 2}) : "—";
     const status = record?.status || student.status || "—";
     details.innerHTML = `<div class="space-y-3 text-sm"><div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"><div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800"><span>External: <b>${escapeHtml(external.join(", ") || "—")}</b></span><span class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">✓ ${escapeHtml(status)}</span></div><div class="mt-3 space-y-3 text-xs"><div class="flex justify-between gap-4"><span class="text-slate-500">Grant Provider / Agency:</span><b class="text-right">—</b></div><div class="flex justify-between gap-4"><span class="text-slate-500">Grant Reference Code:</span><b class="text-right">—</b></div><div class="flex justify-between gap-4"><span class="text-slate-500">Coverage:</span><b class="text-right">—</b></div></div></div><div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900"><div class="flex items-center justify-between gap-3"><span>Internal: <b>${escapeHtml(internal.join(", ") || "—")}</b></span>${internal.length ? `<span class="rounded-md bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">Internal award</span>` : ""}</div></div><div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"><div class="flex items-center justify-between gap-3"><span>Amount</span><b class="tabular-nums">${escapeHtml(amount)}</b></div><div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs dark:border-slate-800"><span class="text-slate-500">Authorization:</span><b class="text-emerald-700 dark:text-emerald-300">${status === "Approved" ? "● Disbursement Authorized" : "—"}</b></div></div></div>`;
+    if (!external.length) details.firstElementChild?.firstElementChild?.classList.add("hidden");
+    if (!internal.length) details.firstElementChild?.children[1]?.classList.add("hidden");
     yearBox.querySelectorAll("[data-view-term-year]").forEach(button => button.addEventListener("click", () => renderViewTermTabs(student, history, button.dataset.viewTermYear, null)));
     semesterBox.querySelectorAll("[data-view-term-semester]").forEach(button => button.addEventListener("click", () => {
         renderViewTermTabs(student, history, selectedYear, button.dataset.viewTermSemester);

@@ -3,7 +3,7 @@
 <div class="mb-5 rounded-2xl border bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
     <label for="search" class="block text-sm font-semibold">Search student records</label>
     <input id="search" type="search" data-input="renderScholars" class="mt-1 w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800" placeholder="Name, student ID, course, or scholarship">
-    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <label class="text-sm font-semibold">School year
             <select id="scholarYear" data-change="renderScholars" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"><option value="">All school years</option></select>
         </label>
@@ -15,9 +15,6 @@
         </label>
         <label class="text-sm font-semibold">Status
             <select id="filter" data-change="renderScholars" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"><option value="All Status">All statuses</option><option>Approved</option><option>Pending</option></select>
-        </label>
-        <label class="text-sm font-semibold">Scholarship type
-            <select id="scholarshipTypeFilter" data-change="renderScholars" class="mt-1 block w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm font-normal dark:border-slate-700 dark:bg-slate-800"><option value="">All scholarship types</option></select>
         </label>
     </div>
 </div>

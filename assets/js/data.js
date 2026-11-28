@@ -104,11 +104,10 @@ async function refreshDatabaseRecords() {
         await requestRecords();
     } catch (error) {
         document.getElementById("scholarRows").removeAttribute("aria-busy");
+        renderAll();
         const status = document.getElementById("recordsStatus");
-        if (status) {
-            status.querySelector("span").textContent = error.message || "Student records could not be loaded.";
-            status.classList.remove("hidden");
-        }
+        status.querySelector("span").textContent = error.message;
+        status.classList.remove("hidden");
     } finally {
         document.getElementById("recentTable").removeAttribute("aria-busy");
         document.getElementById("scholarRows").removeAttribute("aria-busy");

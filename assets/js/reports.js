@@ -55,7 +55,7 @@ function renderDashboardMetrics() {
     const coverageCounts = Object.create(null);
     const catalog = new Map((window.scholarshipCatalog || []).map(s => [s[0], s[3]]));
     for (const row of discountHistory) {
-        for (const name of (Array.isArray(row.scholarships) ? row.scholarships : [])) {
+        for (const name of row.scholarships) {
             const cov = catalog.get(name) || "Other";
             coverageCounts[cov] = (coverageCounts[cov] || 0) + 1;
         }
@@ -69,9 +69,9 @@ function renderDashboardMetrics() {
 
     dashboardChartDetails = {
         status: Object.fromEntries(statuses.map(status => [status, scholars.filter(s => s.status === status)])),
-        usage: Object.fromEntries(usage.map(([name]) => [name, discountHistory.filter(row => (Array.isArray(row.scholarships) ? row.scholarships : []).includes(name))])),
+        usage: Object.fromEntries(usage.map(([name]) => [name, discountHistory.filter(row => (row.scholarships || []).includes(name))])),
         department: Object.fromEntries(deptEntries.map(([name]) => [name, scholars.filter(s => ((s.course || "").replace(/\s*[Â·â€¢â€“â€”—-]\s*\d+(?:st|nd|rd|th)\s+Year$/i, "").trim() || "Unknown") === name)])),
-        coverage: Object.fromEntries(coverageEntries.map(([name]) => [name, discountHistory.filter(row => (Array.isArray(row.scholarships) ? row.scholarships : []).some(scholarship => (catalog.get(scholarship) || "Other") === name))]))
+        coverage: Object.fromEntries(coverageEntries.map(([name]) => [name, discountHistory.filter(row => (row.scholarships || []).some(scholarship => (catalog.get(scholarship) || "Other") === name))]))
     };
 
     dashboardStatusChart?.destroy();
@@ -183,13 +183,13 @@ function getFilteredHistory(){
     return discountHistory.filter(r => 
         (y === "All" || r.year === y) && 
         (sem === "All" || r.semester === sem) && 
-        (!sch || (Array.isArray(r.scholarships) ? r.scholarships : []).includes(sch))
+        (!sch || r.scholarships.includes(sch))
     );
 }
 
 function scholarshipUsageEntries(rows, selectedScholarship) {
     const usage = Object.create(null);
-    rows.forEach(row => (Array.isArray(row.scholarships) ? row.scholarships : []).forEach(name => {
+    rows.forEach(row => row.scholarships.forEach(name => {
         if (!selectedScholarship || name === selectedScholarship) usage[name] = (usage[name] || 0) + 1;
     }));
     return Object.entries(usage).sort((a, b) => b[1] - a[1]);
@@ -325,7 +325,7 @@ function renderAnalytics(){
             labels:years, 
             datasets:[{
                 label:"Availments", 
-                data:years.map(y => rows.filter(r => r.year === y).reduce((n,r) => n + (Array.isArray(r.scholarships) ? r.scholarships : []).filter(s => !selectedScholarship || s === selectedScholarship).length, 0)), 
+                data:years.map(y => rows.filter(r => r.year === y).reduce((n,r) => n + r.scholarships.filter(s => !selectedScholarship || s === selectedScholarship).length, 0)), 
                 tension:.3, fill:false, borderWidth:3, pointRadius:4, borderColor:'#F4B925', backgroundColor:'#F4B925'
             }]
         }, 
@@ -353,7 +353,7 @@ function renderAnalytics(){
         const deptCounts = Object.create(null);
         for (const r of rows) {
             const dept = studentDepts.get(r.id) || "Unknown";
-            const count = (Array.isArray(r.scholarships) ? r.scholarships : []).filter(s => !selectedScholarship || s === selectedScholarship).length;
+            const count = r.scholarships.filter(s => !selectedScholarship || s === selectedScholarship).length;
             deptCounts[dept] = (deptCounts[dept] || 0) + count;
         }
         const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]);
@@ -396,7 +396,7 @@ function openScholarshipUsage(name) {
 function scholarshipUsageRoster(name) {
     const students = new Map(scholars.map(student => [student.id, student]));
     const query = document.getElementById("scholarshipUsageSearch").value.trim().toLowerCase();
-    return getFilteredHistory().filter(row => (Array.isArray(row.scholarships) ? row.scholarships : []).includes(name)).map(row => {
+    return getFilteredHistory().filter(row => row.scholarships.includes(name)).map(row => {
         const student = students.get(row.id);
         return {...row, name: student?.name || row.name || row.id, course: student?.course || "", status: student?.status || ""};
     }).filter(row => [row.name, row.id, row.course, row.year, row.semester, row.status].join(" ").toLowerCase().includes(query));

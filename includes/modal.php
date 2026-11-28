@@ -119,16 +119,16 @@
             <button type="button" data-click="closeViewModal" class="rounded-xl border px-3 py-2 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">✕</button>
         </div>
         <div class="px-5 py-3 sm:px-7">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-y border-slate-100 py-3 dark:border-slate-800">
-                <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">School year <select id="viewSchoolYears" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold shadow-sm dark:border-slate-700 dark:bg-slate-800"></select></label>
-                <div class="flex items-center gap-2"><span class="text-xs font-bold uppercase tracking-wide text-slate-400">Term</span><div id="viewSemesters" class="flex flex-wrap items-center gap-2"></div></div>
+                <div class="flex items-center justify-between border-y border-slate-100 py-2 text-[10px] dark:border-slate-800">
+                <label class="font-bold uppercase tracking-wide text-slate-500">School year <select id="viewSchoolYears" class="ml-2 rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold dark:border-slate-700 dark:bg-slate-800"></select></label>
+                <div class="flex items-center gap-1"><span class="mr-2 font-bold uppercase tracking-wide text-slate-400">Term</span><div id="viewSemesters" class="flex flex-wrap items-center gap-1"></div></div>
             </div>
             <div class="grid border-x border-b border-slate-100 dark:border-slate-800 sm:grid-cols-[1.12fr_.88fr]">
                 <div class="space-y-4 border-b p-4 sm:border-b-0 sm:border-r sm:p-5">
                     <h3 class="text-sm font-extrabold" id="viewName"></h3>
                     <div class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2"><div><span class="text-slate-500">First Name:</span><div id="viewFirstName" class="font-bold"></div></div><div><span class="text-slate-500">Middle Name:</span><div id="viewMiddleName" class="font-bold"></div></div><div><span class="text-slate-500">Last Name:</span><div id="viewLastName" class="font-bold"></div></div><div><span class="text-slate-500">School ID:</span><div id="viewId" class="font-bold"></div></div><div><span class="text-slate-500">Email:</span><div class="font-bold">—</div></div><div><span class="text-slate-500">Phone Number:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Address:</span><div class="font-bold">—</div></div><div class="sm:col-span-2"><span class="text-slate-500">Course / Year:</span><div id="viewCourse" class="font-bold"></div></div><div><span class="text-slate-500">Status:</span><div><span id="viewStatus" class="font-bold"></span></div></div><div><span class="text-slate-500">Last updated:</span><div id="viewUpdated" class="font-bold"></div></div></div>
                 </div>
-                <div class="border-t bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:border-t-0 sm:p-5"><div id="viewTermDetails" class="h-full space-y-2"></div><div id="viewDiscountHistory" hidden></div></div>
+                <div class="bg-slate-50/60 p-3 dark:bg-slate-800/30 sm:p-4"><div id="viewTermDetails" class="h-full space-y-2"></div><div id="viewDiscountHistory" hidden></div></div>
             </div>
         </div>
         <div class="flex flex-wrap justify-end gap-2 border-t p-4 dark:border-slate-800 sm:p-5">
@@ -137,6 +137,7 @@
                 <button type="button" data-click="decideScholar" data-status="Approved" class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60">Approve</button>
             </div>
             <?php endif; ?>
+            <button type="button" data-click="closeViewModal" class="rounded-lg bg-dyci-blue px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-dyci-blueDark transition-colors">Close</button>
         </div>
     </div>
 </div>

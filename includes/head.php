@@ -189,5 +189,7 @@ button:focus-visible, a:focus-visible { outline:2px solid #b07800; outline-offse
     .scholar-form-panel .scholar-form-scroll { --panel-inset:1.125rem; }
 }
 .scholar-workspace dialog { max-height:calc(100vh - 2rem); max-height:calc(100dvh - 2rem); }
+.scholar-workspace dialog:not([open]) { display:none; }
+.scholar-workspace dialog[open] { z-index:50; }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
